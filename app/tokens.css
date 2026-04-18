@@ -1,0 +1,102 @@
+/* Tide — design tokens (deep water palette, phosphor signal).
+   Ported from design bundle. Original brand, not affiliated with Hydrawav3. */
+
+:root {
+  --ink-0: #07090c;
+  --ink-1: #0e1216;
+  --ink-2: #151a20;
+  --ink-3: #1d242c;
+  --ink-4: #2a333d;
+  --ink-5: #404a56;
+
+  --bone-0: #f4efe6;
+  --bone-1: #e8e1d3;
+  --bone-2: #c9bfa8;
+
+  --fog-0: #f8f7f3;
+  --fog-1: #eae8e1;
+  --fog-2: #b9b5a8;
+  --fog-3: #7c786d;
+
+  --signal:     #d4f45a;
+  --signal-dim: #8ba63a;
+  --signal-ink: #1a2708;
+
+  --flare:  #ff6a3d;
+  --cool:   #6fb8ff;
+  --lymph:  #c07bff;
+  --spark:  #ffd36a;
+
+  --hrv:   #7de0c2;
+  --hr:    #ff8a80;
+  --sleep: #8aa4ff;
+
+  --sans:  'Inter Tight', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --mono:  'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  --serif: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
+
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 30px;
+
+  --glow-signal: 0 0 0 1px rgba(212,244,90,0.35), 0 10px 40px -10px rgba(212,244,90,0.55);
+  --glow-flare:  0 0 0 1px rgba(255,106,61,0.35), 0 10px 40px -10px rgba(255,106,61,0.45);
+  --lift-1: 0 1px 0 rgba(255,255,255,0.04) inset, 0 20px 40px -20px rgba(0,0,0,0.6);
+  --lift-2: 0 1px 0 rgba(255,255,255,0.05) inset, 0 40px 60px -20px rgba(0,0,0,0.7);
+}
+
+* { box-sizing: border-box; }
+
+.mono  { font-family: var(--mono); font-feature-settings: 'tnum', 'zero'; letter-spacing: -0.01em; }
+.serif { font-family: var(--serif); }
+
+.display-xl { font-family: var(--serif); font-size: 40px; line-height: 1.02; letter-spacing: -0.022em; font-weight: 400; text-wrap: pretty; }
+.display-lg { font-family: var(--serif); font-size: 34px; line-height: 1.04; letter-spacing: -0.02em;  font-weight: 400; text-wrap: pretty; }
+.display-md { font-family: var(--serif); font-size: 28px; line-height: 1.08; letter-spacing: -0.018em; font-weight: 400; text-wrap: pretty; }
+.display-sm { font-family: var(--serif); font-size: 22px; line-height: 1.2;  letter-spacing: -0.012em; font-weight: 400; text-wrap: pretty; }
+.display-xl em, .display-lg em, .display-md em, .display-sm em {
+  font-style: italic; color: var(--signal);
+}
+
+.upper { text-transform: uppercase; letter-spacing: 0.12em; }
+.tnum  { font-variant-numeric: tabular-nums; }
+
+.grain {
+  background-image: radial-gradient(rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 3px 3px;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  70%  { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+@keyframes breathe {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50%     { transform: scale(1.04); opacity: 0.92; }
+}
+@keyframes wave-shift {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes meter {
+  0%   { width: 0; }
+  100% { width: var(--w, 100%); }
+}
+@keyframes caret-blink {
+  0%, 50%   { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+@keyframes scan {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+@keyframes drift {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-3px); }
+}
