@@ -39,24 +39,12 @@ export async function POST(req: NextRequest) {
   const db = insforgeServer();
   const isSimulated = !token;
 
-  // Self-heal demo rows only on real QR scan (upserts are slow; simulate assumes seeded data).
+  // Self-heal demo rows fire-and-forget so they don't block the check-in response.
   if (!isSimulated) {
-    try {
-      await db.database
-        .from("practitioners")
-        .upsert(
-          [{ ...DEMO_PRACTITIONER, id: practitionerId }],
-          { onConflict: "id" }
-        );
-      await db.database
-        .from("clients")
-        .upsert(
-          [{ ...DEMO_CLIENT, id: clientId, practitioner_id: practitionerId }],
-          { onConflict: "id" }
-        );
-    } catch (e) {
-      console.warn("Check-in parent upsert failed:", e);
-    }
+    Promise.all([
+      db.database.from("practitioners").upsert([{ ...DEMO_PRACTITIONER, id: practitionerId }], { onConflict: "id" }),
+      db.database.from("clients").upsert([{ ...DEMO_CLIENT, id: clientId, practitioner_id: practitionerId }], { onConflict: "id" }),
+    ]).catch((e) => console.warn("Check-in parent upsert failed:", e));
   }
 
   const { data: session, error } = await db.database
@@ -76,18 +64,20 @@ export async function POST(req: NextRequest) {
 
   const sessionId = (session as { id: string } | null)?.id;
 
-  // Realtime publish only needed for real QR flow; simulate navigates directly.
+  // Publish realtime in background so the client button responds immediately.
   if (!isSimulated) {
-    try {
-      await db.realtime.connect();
-      await db.realtime.subscribe(`checkin:${practitionerId}`);
-      await db.realtime.publish(`checkin:${practitionerId}`, "checked_in", {
-        sessionId,
-        clientId,
-      });
-    } catch (e) {
-      console.warn("Realtime publish failed:", e);
-    }
+    (async () => {
+      try {
+        await db.realtime.connect();
+        await db.realtime.subscribe(`checkin:${practitionerId}`);
+        await db.realtime.publish(`checkin:${practitionerId}`, "checked_in", {
+          sessionId,
+          clientId,
+        });
+      } catch (e) {
+        console.warn("Realtime publish failed:", e);
+      }
+    })();
   }
 
   return NextResponse.json({ sessionId });

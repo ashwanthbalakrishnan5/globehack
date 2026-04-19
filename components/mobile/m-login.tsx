@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { MScreen } from "./shell";
 import { TideMark } from "@/components/primitives";
+import { useSession } from "@/lib/store";
 
 function setAuthCookie() {
   if (typeof document === "undefined") return;
@@ -22,6 +23,10 @@ function wipeDemoState() {
       /* private mode / quota — non-fatal for demo */
     }
   });
+  // Also reset the in-memory Zustand store, not just localStorage.
+  // Without this, the previous run's phase persists across navigation
+  // and the QR scanner won't show on /client/checkin.
+  useSession.getState().resetDemo();
 }
 
 function SocialButton({ provider, onClick }: { provider: "google" | "apple"; onClick: () => void }) {
