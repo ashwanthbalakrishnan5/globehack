@@ -1,10 +1,11 @@
 "use client";
 
-import { memo, useEffect, useRef, useState, useCallback } from "react";
+import { memo, useEffect, useRef, useState, useCallback, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Pause, Play, Square } from "lucide-react";
 import { LoadingButton, Meter, Tag, VoiceWave, WavePath } from "@/components/primitives";
 import { WShell } from "./shell";
 import { subscribeChannel } from "@/lib/realtime";
@@ -49,6 +50,19 @@ type Phase = "ready" | "beltPrep" | "starting" | "live" | "ending";
 
 const BELT_PREP_AUTO_MS = 9000;
 const AUDIO_LEAD_IN_MS = 2800;
+
+const audioCtrlStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+  padding: "4px 8px",
+  borderRadius: 6,
+  background: "var(--ink-2)",
+  border: "1px solid var(--ink-3)",
+  color: "var(--fog-0)",
+  cursor: "pointer",
+  fontFamily: "var(--sans)",
+};
 
 function fmt(s: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -119,6 +133,7 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [notes, setNotes] = useState<SessionNote[]>(initialNotes);
   const [useFallback, setUseFallback] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [phase, setPhase] = useState<Phase>("ready");
   const [elapsed, setElapsed] = useState(0);
   const [beltCountdown, setBeltCountdown] = useState(Math.ceil(BELT_PREP_AUTO_MS / 1000));
@@ -283,6 +298,27 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
     beginSession();
   }, [beginSession]);
 
+  const togglePause = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      audio.play().catch(console.error);
+      setPaused(false);
+    } else {
+      audio.pause();
+      setPaused(true);
+    }
+  }, []);
+
+  const stopPlayback = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    setPaused(false);
+  }, []);
+
   // Derived — must be above callbacks that reference them
   const aftersDone = MOVEMENTS.filter((m) => !!captures[`${clientId}:after:${m.id}`]);
   const allAftersDone = aftersDone.length === MOVEMENTS.length;
@@ -396,6 +432,30 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
           <span aria-hidden>⚠</span>
           two-party consent · audio recorded with client ack
         </span>
+        {isPlaying && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={togglePause}
+              title={paused ? "Resume audio" : "Pause audio"}
+              style={audioCtrlStyle}
+            >
+              {paused ? <Play size={12} /> : <Pause size={12} />}
+              <span className="mono upper" style={{ fontSize: 9, letterSpacing: 0.12 }}>
+                {paused ? "resume" : "pause"}
+              </span>
+            </button>
+            <button
+              onClick={stopPlayback}
+              title="Stop audio and move on"
+              style={audioCtrlStyle}
+            >
+              <Square size={11} />
+              <span className="mono upper" style={{ fontSize: 9, letterSpacing: 0.12 }}>
+                stop
+              </span>
+            </button>
+          </div>
+        )}
         <span style={{ flex: 1 }} />
         <span className="mono tnum" style={{ fontSize: 14, color: "var(--fog-0)" }}>
           {fmt(elapsed)} <span style={{ color: "var(--fog-3)", fontSize: 11 }}>/ 90:00</span>

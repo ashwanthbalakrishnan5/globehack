@@ -248,6 +248,29 @@ export function PoseCapture({ movement, label, onCapture }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%" }}>
+      {/* Non-interactive consent chip — mirrors the two-party audio pill */}
+      {!captured && (
+        <div
+          title="Video is recorded with the client's acknowledgment."
+          className="mono upper"
+          style={{
+            alignSelf: "flex-start",
+            fontSize: 9,
+            letterSpacing: 0.14,
+            padding: "4px 8px",
+            borderRadius: 6,
+            background: "rgba(245,176,83,0.1)",
+            color: "var(--spark, #f5b053)",
+            border: "1px solid rgba(245,176,83,0.35)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <span aria-hidden>⚠</span>
+          video recorded with client ack
+        </div>
+      )}
       {/* Instruction */}
       {!captured && (
         <div

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type CSSProperties } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Pause, Play, Sparkles, Square } from "lucide-react";
 import { PainReporter } from "@/components/features/pain-reporter";
 import { useBodyState, EMPTY_ZONES } from "@/lib/body-state";
 import { questionsForClient } from "@/lib/onboarding-questions";
@@ -35,6 +35,19 @@ const DRAFT_MS = 900;
 const QUESTION_REVEAL_MS = 650;
 const CONVERSATION_DELAY_MS = 1400;
 
+const audioCtrlStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+  padding: "4px 8px",
+  borderRadius: 6,
+  background: "var(--ink-2)",
+  border: "1px solid var(--ink-3)",
+  color: "var(--fog-0)",
+  cursor: "pointer",
+  fontFamily: "var(--sans)",
+};
+
 // Seeded from the Health Connect payload: football contact + 7 runs in 14 days
 // stress the left knee, running volume + desk hours stress lower back, and
 // sleep trending down with long desk hours shows up as neck tension.
@@ -55,6 +68,7 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
   const [segments, setSegments] = useState<Segment[]>([]);
   const [visibleCount, setVisibleCount] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [stage, setStage] = useState<Stage>("analyzing");
   const [revealedQuestions, setRevealedQuestions] = useState(0);
   const [, startTransition] = useTransition();
@@ -201,6 +215,33 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
     [clientId, setAll]
   );
 
+  const togglePause = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      audio.play().catch(console.error);
+      setPaused(false);
+    } else {
+      audio.pause();
+      setPaused(true);
+    }
+  }, []);
+
+  const stopPlayback = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+    timers.current.forEach((t) => {
+      clearTimeout(t);
+      clearInterval(t as unknown as NodeJS.Timeout);
+    });
+    timers.current = [];
+    setPlaying(false);
+    setPaused(false);
+  }, []);
+
   const visibleSegments = segments.slice(0, visibleCount);
   const currentSpeaker = visibleSegments.at(-1)?.speaker ?? null;
 
@@ -264,6 +305,30 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
           <span aria-hidden>⚠</span>
           two-party consent · audio recorded with client ack
         </span>
+        {playing && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={togglePause}
+              title={paused ? "Resume audio" : "Pause audio"}
+              style={audioCtrlStyle}
+            >
+              {paused ? <Play size={12} /> : <Pause size={12} />}
+              <span className="mono upper" style={{ fontSize: 9, letterSpacing: 0.12 }}>
+                {paused ? "resume" : "pause"}
+              </span>
+            </button>
+            <button
+              onClick={stopPlayback}
+              title="Stop audio and move on"
+              style={audioCtrlStyle}
+            >
+              <Square size={11} />
+              <span className="mono upper" style={{ fontSize: 9, letterSpacing: 0.12 }}>
+                stop
+              </span>
+            </button>
+          </div>
+        )}
         <span style={{ flex: 1 }} />
         <Link
           href={`/practitioner/session/${clientId}/device`}
