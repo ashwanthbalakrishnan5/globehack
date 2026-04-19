@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MScreen } from "./shell";
 import { Meter } from "@/components/primitives";
 import type { SummaryCard } from "@/lib/types";
-import { MComicReader } from "./m-comic-reader";
 
 interface Props {
   card: SummaryCard | null;
@@ -14,7 +12,6 @@ interface Props {
 }
 
 export function MSummarySheet({ card, onClose }: Props) {
-  const [showComic, setShowComic] = useState(false);
   return (
     <AnimatePresence>
       {card && (
@@ -165,79 +162,48 @@ export function MSummarySheet({ card, onClose }: Props) {
               )}
 
               <div style={{ flex: 1 }} />
-              <div style={{ paddingBottom: 32, display: "flex", flexDirection: "column", gap: 10 }}>
-                {/* Comic CTA — primary action */}
-                <button
-                  type="button"
-                  onClick={() => setShowComic(true)}
+              <div style={{ paddingBottom: 32, display: "flex", gap: 8 }}>
+                <Link
+                  href="/client/summary"
                   style={{
-                    width: "100%",
-                    height: 56,
+                    flex: 1,
+                    height: 52,
                     borderRadius: 14,
-                    background: "linear-gradient(135deg, rgba(212,244,90,0.15), rgba(192,123,255,0.08))",
-                    border: "1px solid rgba(212,244,90,0.35)",
-                    color: "var(--signal)",
-                    fontSize: 16,
-                    fontWeight: 700,
+                    background: "var(--signal)",
+                    color: "var(--signal-ink)",
+                    border: "none",
+                    fontSize: 15,
+                    fontWeight: 600,
                     fontFamily: "var(--sans)",
-                    cursor: "pointer",
+                    boxShadow: "var(--glow-signal)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: 10,
-                    boxShadow: "0 0 24px rgba(212,244,90,0.1)",
+                    textDecoration: "none",
                   }}
                 >
-                  <span style={{ fontSize: 20 }}>📖</span>
-                  Read your session story
+                  View &amp; share card
+                </Link>
+                <button
+                  onClick={onClose}
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 14,
+                    background: "var(--ink-2)",
+                    border: "1px solid var(--ink-3)",
+                    color: "var(--fog-2)",
+                    fontSize: 18,
+                    cursor: "pointer",
+                  }}
+                >
+                  ×
                 </button>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <Link
-                    href="/client/summary"
-                    style={{
-                      flex: 1,
-                      height: 48,
-                      borderRadius: 14,
-                      background: "var(--signal)",
-                      color: "var(--signal-ink)",
-                      border: "none",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      fontFamily: "var(--sans)",
-                      boxShadow: "var(--glow-signal)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      textDecoration: "none",
-                    }}
-                  >
-                    View &amp; share card
-                  </Link>
-                  <button
-                    onClick={onClose}
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 14,
-                      background: "var(--ink-2)",
-                      border: "1px solid var(--ink-3)",
-                      color: "var(--fog-2)",
-                      fontSize: 18,
-                      cursor: "pointer",
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
               </div>
             </div>
           </MScreen>
         </motion.div>
       )}
-
-      <AnimatePresence>
-        {showComic && <MComicReader onClose={() => setShowComic(false)} />}
-      </AnimatePresence>
     </AnimatePresence>
   );
 }
