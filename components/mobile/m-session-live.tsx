@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { MScreen } from "./shell";
 import { subscribeChannel } from "@/lib/realtime";
@@ -22,10 +22,28 @@ const BodyViewer = dynamic(() => import("@/components/features/body-viewer"), {
   ),
 });
 
+function useElapsedTimer(startedAt: number | null): string {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!startedAt) return;
+    const tick = () => setElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [startedAt]);
+
+  const m = Math.floor(elapsed / 60).toString().padStart(2, "0");
+  const s = (elapsed % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
 export function MSessionLive() {
   const clientId = useSession((s) => s.activeClientId) ?? process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
+  const liveStartedAt = useSession((s) => s.liveStartedAt);
   const zones = useBodyState((s) => s.zones[clientId] ?? {});
   const mergeZones = useBodyState((s) => s.mergeZones);
+  const elapsed = useElapsedTimer(liveStartedAt);
 
   useEffect(() => {
     const unsub = subscribeChannel<{ zones: { id: string; status: BodyPartStatus }[] }>(
@@ -45,7 +63,7 @@ export function MSessionLive() {
           <div>
             <div className="mono upper" style={{ fontSize: 10, color: "var(--signal)" }}>◉ Session live</div>
             <div className="mono tnum" style={{ fontSize: 28, color: "var(--fog-0)", marginTop: 2, fontWeight: 300 }}>
-              12:47
+              {liveStartedAt ? elapsed : "—:——"}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>

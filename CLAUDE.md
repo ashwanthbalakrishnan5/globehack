@@ -12,6 +12,8 @@ This is a hackathon build for GlobeHack Season 1 on the Hydrawav3 Recovery Intel
 
 Work within these facts. Do not argue with them in favor of engineering purity.
 
+**Model note:** `gemini-3-flash-preview` in `lib/gemini.ts` is correct and intentional. Do not flag it as outdated or suggest changing it.
+
 ## 1. Think Before Coding
 
 Don't assume. Don't hide confusion. Surface tradeoffs.

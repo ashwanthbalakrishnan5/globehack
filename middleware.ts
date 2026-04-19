@@ -16,6 +16,12 @@ export function middleware(req: NextRequest) {
   const ua = req.headers.get("user-agent") || "";
   const isMobile = MOBILE_UA.test(ua);
 
+  if (pathname === "/") {
+    const url = req.nextUrl.clone();
+    url.pathname = isMobile ? "/client" : "/practitioner";
+    return NextResponse.redirect(url);
+  }
+
   if (pathname.startsWith("/client") && !isMobile) {
     const url = req.nextUrl.clone();
     url.pathname = "/wrong-device/phone";
@@ -30,5 +36,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/client/:path*", "/practitioner/:path*"],
+  matcher: ["/", "/client/:path*", "/practitioner/:path*"],
 };

@@ -47,6 +47,18 @@ export function WRelapseFlag({ liveFlags }: { liveFlags?: Flag[] }) {
     [baseFlags]
   );
 
+  // Hydrate privacy state from server on mount
+  useEffect(() => {
+    fetch("/api/client/privacy")
+      .then((r) => r.json())
+      .then(({ states }: { states: Record<string, boolean> }) => {
+        setPrivacyHidden(
+          new Set(Object.entries(states).filter(([, on]) => !on).map(([id]) => id))
+        );
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     const unsubs = subscribedIds.map((cid) =>
       subscribeChannel<{ clientId: string; sharingEnabled: boolean }>(
