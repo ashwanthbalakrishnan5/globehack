@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MScreen } from "./shell";
 import { MComicReader } from "./m-comic-reader";
@@ -36,10 +36,11 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
   const bodyAfter = card?.body_after ?? {};
   const hasBody = Object.keys(bodyBefore).length > 0 || Object.keys(bodyAfter).length > 0;
 
-  const [sharing, startShare] = useTransition();
+  const [sharing, setSharing] = useState(false);
   const [liked, setLiked] = useState(false);
   const [showAfter, setShowAfter] = useState(false);
   const [showComic, setShowComic] = useState(false);
+  const cardFileRef = useRef<File | null>(null);
 
   useEffect(() => {
     if (!hasBody) return;
@@ -47,51 +48,80 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
     return () => clearInterval(t);
   }, [hasBody]);
 
-  const handleShare = () => {
-    startShare(async () => {
+  useEffect(() => {
+    if (!summaryId) return;
+    let cancelled = false;
+    (async () => {
       try {
-        const shareUrl = summaryId
-          ? `${window.location.origin}/share/${summaryId}`
-          : window.location.origin;
-
-        if (summaryId) {
-          const res = await fetch(`/api/card/${summaryId}`);
-          if (!res.ok) throw new Error("card render failed");
-          const blob = await res.blob();
-          const file = new File([blob], "tide-session.png", { type: "image/png" });
-
-          if (
-            typeof navigator !== "undefined" &&
-            "share" in navigator &&
-            typeof navigator.canShare === "function" &&
-            navigator.canShare({ files: [file] })
-          ) {
-            await navigator.share({
-              files: [file],
-              title: "My Hydrawav3 session with Maya Reyes",
-              text: `"${quote}" — ${durationMin} min recovery session at Stillwater Recovery`,
-              url: shareUrl,
-            });
-            return;
-          }
-
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "tide-session.png";
-          a.click();
-          URL.revokeObjectURL(url);
-        }
-
-        window.open(
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent(`"${quote}" — my recovery session via @Hydrawav3`)}&url=${encodeURIComponent(shareUrl)}`,
-          "_blank",
-          "noopener,noreferrer"
-        );
-      } catch (e) {
-        console.error("share failed", e);
+        const res = await fetch(`/api/card/${summaryId}`);
+        if (!res.ok || cancelled) return;
+        const blob = await res.blob();
+        if (cancelled) return;
+        cardFileRef.current = new File([blob], "tide-session.png", { type: "image/png" });
+      } catch {
+        // preload is best-effort; share handler retries if needed
       }
-    });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [summaryId]);
+
+  const shareText = `"${quote}" — ${durationMin} min recovery session at Stillwater Recovery`;
+  const tweetText = `"${quote}" — my recovery session via @Hydrawav3`;
+
+  const handleShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    const shareUrl = summaryId
+      ? `${window.location.origin}/share/${summaryId}`
+      : window.location.origin;
+
+    try {
+      const file = cardFileRef.current;
+      const canShareFile =
+        !!file &&
+        typeof navigator !== "undefined" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [file] });
+
+      if (canShareFile && file) {
+        await navigator.share({
+          files: [file],
+          title: "My Hydrawav3 session with Maya Reyes",
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      }
+
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        await navigator.share({
+          title: "My Hydrawav3 session with Maya Reyes",
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      }
+
+      window.open(
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    } catch (e) {
+      if (e instanceof Error && (e.name === "AbortError" || e.name === "NotAllowedError")) {
+        return;
+      }
+      console.error("share failed", e);
+      window.open(
+        `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    } finally {
+      setSharing(false);
+    }
   };
 
   return (

@@ -12,23 +12,46 @@ async function loadSummary(id: string): Promise<SummaryCard | null> {
   return ((data as { summary_card: SummaryCard } | null)?.summary_card) ?? null;
 }
 
+function siteOrigin(): string {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const card = await loadSummary(id);
   const title = card?.quote ? `"${card.quote}" · Tide session` : "Tide · recovery session";
   const description = card?.protocol_used ?? "Parasympathetic reset, guided by Hydrawav3.";
+  const origin = siteOrigin();
+  const imageUrl = `${origin}/share/${id}/opengraph-image`;
+  const pageUrl = `${origin}/share/${id}`;
+  const images = [
+    {
+      url: imageUrl,
+      width: 1200,
+      height: 630,
+      alt: "Tide session summary",
+    },
+  ];
+
   return {
+    metadataBase: new URL(origin),
     title,
     description,
     openGraph: {
       title,
       description,
       type: "article",
+      url: pageUrl,
+      siteName: "Hydrawav3",
+      images,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [imageUrl],
     },
   };
 }
