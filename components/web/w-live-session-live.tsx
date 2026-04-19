@@ -15,7 +15,7 @@ import { PoseCapturePanel } from "@/components/features/pose-capture-panel";
 import { PoseComparison } from "@/components/features/pose-comparison";
 import { usePoseStore } from "@/lib/pose-store";
 import { MOVEMENTS } from "@/components/features/pose-capture";
-import { startDevice, stopDevice } from "@/lib/mqtt";
+import { useDeviceStore } from "@/lib/device-store";
 
 const BodyViewer = dynamic(() => import("@/components/features/body-viewer"), {
   ssr: false,
@@ -123,6 +123,8 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [beltCountdown, setBeltCountdown] = useState(Math.ceil(BELT_PREP_AUTO_MS / 1000));
   const [mqttAck, setMqttAck] = useState<string | null>(null);
+  const [showRomGate, setShowRomGate] = useState(false);
+  const [showImprovements, setShowImprovements] = useState(false);
   const fallbackSegs = useRef<FallbackSegment[]>([]);
   const receivedCount = useRef(0);
   const fallbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -131,6 +133,9 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
   const zones = useBodyState((s) => s.zones[clientId] ?? EMPTY_ZONES);
   const mergeZones = useBodyState((s) => s.mergeZones);
   const captures = usePoseStore((s) => s.captures);
+  const clearPoses = usePoseStore((s) => s.clearClient);
+  const device = useDeviceStore((s) => s.device);
+  const protocol = useDeviceStore((s) => s.protocol);
 
   const isPlaying = phase === "live";
 
@@ -229,12 +234,22 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
     phaseTimers.current = [];
     setPhase("starting");
 
-    // Fire MQTT start on the placeholder endpoint (swap in real endpoint via env)
-    try {
-      const ack = await startDevice();
-      setMqttAck(`mqtt · ${ack.action} ack ${ack.macId}`);
-    } catch (e) {
-      console.warn("mqtt start failed", e);
+    // Fire MQTT start using paired device + selected protocol
+    const mac = device?.mac ?? "74:4D:BD:A0:A3:EC";
+    if (protocol) {
+      try {
+        await fetch("/api/device/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mac, protocol }),
+        });
+        setMqttAck(`mqtt · ${protocol.name} · ${mac.slice(-5)}`);
+      } catch (e) {
+        console.warn("mqtt start failed", e);
+        setMqttAck("mqtt · fallback mode");
+      }
+    } else {
+      setMqttAck("mqtt · no protocol selected");
     }
 
     // Record session start in backend
@@ -268,11 +283,30 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
     beginSession();
   }, [beginSession]);
 
+  // Derived — must be above callbacks that reference them
+  const aftersDone = MOVEMENTS.filter((m) => !!captures[`${clientId}:after:${m.id}`]);
+  const allAftersDone = aftersDone.length === MOVEMENTS.length;
+  const sessionStarted = phase === "live" || phase === "ending";
+
   const handleEndReview = useCallback(async () => {
     if (phase === "ending") return;
+    // Gate: require all after-captures before ending
+    if (!allAftersDone) {
+      setShowRomGate(true);
+      return;
+    }
+    setShowImprovements(true);
+  }, [phase, allAftersDone]);
+
+  const handleConfirmEnd = useCallback(async () => {
+    setShowImprovements(false);
     setPhase("ending");
     try {
-      await stopDevice();
+      await fetch("/api/device/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mac: device?.mac ?? "74:4D:BD:A0:A3:EC" }),
+      });
     } catch (e) {
       console.warn("mqtt stop failed", e);
     }
@@ -292,8 +326,9 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
     } catch (e) {
       console.error(e);
     }
+    clearPoses(clientId);
     router.push(`/practitioner/session/${clientId}/notes`);
-  }, [sessionId, clientId, router, phase, zones]);
+  }, [sessionId, clientId, router, zones, device, clearPoses]);
 
   const flagged = notes.filter((n) => n.flagged);
   const showBeltOverlay = phase === "beltPrep" || phase === "starting";
@@ -302,12 +337,12 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
     phase === "live"
       ? "Live"
       : phase === "beltPrep"
-      ? "Belt prep"
-      : phase === "starting"
-      ? "Syncing device"
-      : phase === "ending"
-      ? "Ending"
-      : "Ready";
+        ? "Belt prep"
+        : phase === "starting"
+          ? "Syncing device"
+          : phase === "ending"
+            ? "Ending"
+            : "Ready";
 
   return (
     <WShell pageName="live">
@@ -422,7 +457,9 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
             border: "none",
           }}
         >
-          End &amp; review
+          {sessionStarted && !allAftersDone
+            ? `End & review · ${MOVEMENTS.length - aftersDone.length} ROM pending`
+            : "End & review"}
         </LoadingButton>
       </div>
 
@@ -598,6 +635,29 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
             />
           )}
         </AnimatePresence>
+
+        {/* ROM gate — blocks end until after-captures done */}
+        <AnimatePresence>
+          {showRomGate && (
+            <RomGateOverlay
+              clientId={clientId}
+              captures={captures}
+              onDone={() => { setShowRomGate(false); setShowImprovements(true); }}
+              onDismiss={() => setShowRomGate(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Improvement summary — shown before navigating away */}
+        <AnimatePresence>
+          {showImprovements && (
+            <ImprovementSummaryOverlay
+              clientId={clientId}
+              captures={captures}
+              onConfirm={handleConfirmEnd}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </WShell>
   );
@@ -741,6 +801,263 @@ function BeltStrapOverlay({
             </button>
           </div>
         </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── ROM Gate Overlay ────────────────────────────────────────────────────────
+// Blocks session end until all after-captures are done
+
+function RomGateOverlay({
+  clientId,
+  captures,
+  onDone,
+  onDismiss,
+}: {
+  clientId: string;
+  captures: Record<string, import("@/lib/pose-store").PoseCapture>;
+  onDone: () => void;
+  onDismiss: () => void;
+}) {
+  const allDone = MOVEMENTS.every((m) => !!captures[`${clientId}:after:${m.id}`]);
+
+  useEffect(() => {
+    if (allDone) onDone();
+  }, [allDone, onDone]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: "absolute", inset: 0, zIndex: 50,
+        background: "rgba(6,8,12,0.96)", backdropFilter: "blur(10px)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24,
+        padding: 40,
+      }}
+    >
+      <div className="mono upper" style={{ fontSize: 10, color: "var(--flare)" }}>
+        ⚠ capture required before ending
+      </div>
+      <div className="serif" style={{ fontSize: 28, color: "var(--fog-0)", textAlign: "center", maxWidth: 480 }}>
+        Capture <em style={{ color: "var(--signal)" }}>after-session ROM</em> to measure improvement
+      </div>
+      <div style={{ fontSize: 13, color: "var(--fog-3)", textAlign: "center", maxWidth: 400 }}>
+        Both movements must be captured so the client can see their progress. Takes under 30 seconds.
+      </div>
+
+      {/* Per-movement status */}
+      <div style={{ display: "flex", gap: 12 }}>
+        {MOVEMENTS.map((m) => {
+          const done = !!captures[`${clientId}:after:${m.id}`];
+          return (
+            <div
+              key={m.id}
+              style={{
+                padding: "10px 18px", borderRadius: 10,
+                background: done ? "rgba(34,197,94,0.08)" : "var(--ink-2)",
+                border: `1px solid ${done ? "rgba(34,197,94,0.3)" : "var(--ink-3)"}`,
+                display: "flex", alignItems: "center", gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 18 }}>{m.icon}</span>
+              <div>
+                <div style={{ fontSize: 12, color: done ? "#4ade80" : "var(--fog-0)", fontWeight: 600 }}>{m.label}</div>
+                <div className="mono" style={{ fontSize: 9, color: done ? "#4ade80" : "var(--fog-3)" }}>
+                  {done ? "✓ captured" : "pending"}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Inline capture panel */}
+      <div style={{ width: "100%", maxWidth: 480 }}>
+        <PoseCapturePanel clientId={clientId} phase="after" />
+      </div>
+
+      <button
+        onClick={onDismiss}
+        style={{
+          fontSize: 11, color: "var(--fog-3)", background: "none",
+          border: "none", cursor: "pointer", fontFamily: "var(--mono)",
+        }}
+      >
+        ← back to session
+      </button>
+    </motion.div>
+  );
+}
+
+// ─── Improvement Summary Overlay ─────────────────────────────────────────────
+// Full-screen before/after comparison shown before navigating away
+
+function ImprovementSummaryOverlay({
+  clientId,
+  captures,
+  onConfirm,
+}: {
+  clientId: string;
+  captures: Record<string, import("@/lib/pose-store").PoseCapture>;
+  onConfirm: () => void;
+}) {
+  const pairs = MOVEMENTS.map((m) => ({
+    movement: m,
+    before: captures[`${clientId}:before:${m.id}`] ?? null,
+    after: captures[`${clientId}:after:${m.id}`] ?? null,
+  })).filter((p) => p.before && p.after);
+
+  // Compute overall improvement score (avg delta % across movements)
+  const scores = pairs.map(({ before, after }) => {
+    if (!before || !after) return 0;
+    const delta = after.primary.value - before.primary.value;
+    const lowerIsBetter = before.primary.lowerIsBetter === true;
+    const improved = lowerIsBetter ? delta < 0 : delta > 0;
+    const pct = before.primary.value > 0 ? Math.abs(delta / before.primary.value) * 100 : 0;
+    return improved ? pct : -pct;
+  });
+  const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+  const overallImproved = avgScore > 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ type: "spring", stiffness: 260, damping: 28 }}
+      style={{
+        position: "absolute", inset: 0, zIndex: 50,
+        background: "rgba(6,8,12,0.97)", backdropFilter: "blur(12px)",
+        display: "flex", flexDirection: "column", overflow: "auto",
+      }}
+    >
+      {/* Header */}
+      <div style={{ padding: "28px 40px 0", display: "flex", alignItems: "center", gap: 16 }}>
+        <div>
+          <div className="mono upper" style={{ fontSize: 9, color: "var(--signal)" }}>session complete</div>
+          <div className="serif" style={{ fontSize: 28, color: "var(--fog-0)", marginTop: 4 }}>
+            Movement <em style={{ color: overallImproved ? "var(--signal)" : "var(--flare)" }}>
+              {overallImproved ? "improved" : "unchanged"}
+            </em> this session
+          </div>
+        </div>
+        <span style={{ flex: 1 }} />
+        {/* Overall score badge */}
+        <div
+          style={{
+            padding: "12px 20px", borderRadius: 14,
+            background: overallImproved ? "rgba(212,244,90,0.1)" : "rgba(255,106,61,0.08)",
+            border: `1px solid ${overallImproved ? "rgba(212,244,90,0.35)" : "rgba(255,106,61,0.3)"}`,
+            textAlign: "center",
+          }}
+        >
+          <div
+            className="mono tnum"
+            style={{ fontSize: 32, fontWeight: 700, color: overallImproved ? "var(--signal)" : "var(--flare)" }}
+          >
+            {overallImproved ? "+" : ""}{Math.round(avgScore)}%
+          </div>
+          <div className="mono upper" style={{ fontSize: 8, color: "var(--fog-3)", marginTop: 2 }}>avg ROM delta</div>
+        </div>
+      </div>
+
+      {/* Per-movement comparisons */}
+      <div style={{ padding: "24px 40px", display: "flex", gap: 24, flex: 1 }}>
+        {pairs.map(({ movement, before, after }) => {
+          if (!before || !after) return null;
+          const delta = after.primary.value - before.primary.value;
+          const lowerIsBetter = before.primary.lowerIsBetter === true;
+          const improved = lowerIsBetter ? delta < 0 : delta > 0;
+          const absDelta = Math.abs(delta);
+
+          return (
+            <motion.div
+              key={movement.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              style={{
+                flex: 1, background: "var(--ink-2)", borderRadius: 16,
+                border: `1px solid ${improved ? "rgba(212,244,90,0.2)" : "var(--ink-3)"}`,
+                padding: 20, display: "flex", flexDirection: "column", gap: 14,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 20 }}>{movement.icon}</span>
+                <div>
+                  <div style={{ fontSize: 14, color: "var(--fog-0)", fontWeight: 600 }}>{movement.label}</div>
+                  <div className="mono" style={{ fontSize: 9, color: "var(--fog-3)" }}>{movement.zone}</div>
+                </div>
+                <span style={{ flex: 1 }} />
+                <div
+                  style={{
+                    padding: "4px 10px", borderRadius: 8,
+                    background: improved ? "rgba(212,244,90,0.1)" : "rgba(255,106,61,0.08)",
+                    color: improved ? "#4ade80" : "#f87171",
+                    fontSize: 12, fontWeight: 700,
+                  }}
+                >
+                  {improved ? "+" : ""}{lowerIsBetter && delta < 0 ? "-" : ""}{absDelta}{before.primary.unit}
+                </div>
+              </div>
+
+              {/* Snapshots */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {[{ label: "before", snap: before.snapshot }, { label: "after", snap: after.snapshot }].map(({ label, snap }) => (
+                  <div key={label} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ aspectRatio: "4/3", borderRadius: 8, overflow: "hidden", border: "1px solid var(--ink-3)" }}>
+                      <img src={snap} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                    <div className="mono upper" style={{ fontSize: 8, color: "var(--fog-3)", textAlign: "center" }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Metric row */}
+              <div style={{ textAlign: "center", padding: "10px 0", borderTop: "1px solid var(--ink-3)" }}>
+                <div className="mono upper" style={{ fontSize: 8, color: "var(--fog-3)", marginBottom: 6 }}>
+                  {before.primary.label}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 700 }}>
+                  <span style={{ color: "var(--fog-3)" }}>{before.primary.value}{before.primary.unit}</span>
+                  <span style={{ color: "var(--fog-3)", margin: "0 10px", fontSize: 16 }}>→</span>
+                  <span style={{ color: improved ? "#86efac" : "#fca5a5" }}>
+                    {after.primary.value}{after.primary.unit}
+                  </span>
+                </div>
+                {before.secondary && after.secondary && (
+                  <div className="mono" style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 6 }}>
+                    {before.secondary.label}: {before.secondary.value}{before.secondary.unit}
+                    {" → "}
+                    {after.secondary.value}{after.secondary.unit}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div style={{ padding: "0 40px 32px", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ fontSize: 12, color: "var(--fog-3)" }}>
+          These results will be included in the client&apos;s summary card.
+        </div>
+        <span style={{ flex: 1 }} />
+        <button
+          onClick={onConfirm}
+          style={{
+            height: 44, padding: "0 32px", borderRadius: 10,
+            background: "var(--signal)", color: "var(--signal-ink)",
+            fontSize: 14, fontWeight: 600, fontFamily: "var(--sans)",
+            border: "none", cursor: "pointer",
+          }}
+        >
+          Save &amp; send summary →
+        </button>
       </div>
     </motion.div>
   );
