@@ -2,7 +2,11 @@
 
 import { useState, useRef, useCallback, startTransition } from "react";
 import dynamic from "next/dynamic";
-import type { BodyViewerHandle, MarkedParts, BodyPartStatus } from "./body-viewer";
+import type {
+  BodyViewerHandle,
+  MarkedParts,
+  BodyPartStatus,
+} from "./body-viewer";
 import { BODY_PARTS } from "./body-viewer";
 
 const BodyViewer = dynamic(() => import("./body-viewer"), {
@@ -12,16 +16,41 @@ const BodyViewer = dynamic(() => import("./body-viewer"), {
       style={{
         width: "100%",
         height: "100%",
-        background: "radial-gradient(circle at 50% 60%, rgba(212,244,90,0.08), #0a0d14 70%)",
+        background:
+          "radial-gradient(circle at 50% 60%, rgba(212,244,90,0.08), #0a0d14 70%)",
       }}
     />
   ),
 });
 
 const GROUPS = [
-  { label: "Upper Body", ids: ["head", "neck", "left_shoulder", "right_shoulder", "chest", "left_arm", "right_arm"] },
-  { label: "Core",       ids: ["abdomen", "lower_back"] },
-  { label: "Lower Body", ids: ["left_hip", "right_hip", "left_thigh", "right_thigh", "left_knee", "right_knee", "left_leg", "right_leg", "feet"] },
+  {
+    label: "Upper Body",
+    ids: [
+      "head",
+      "neck",
+      "left_shoulder",
+      "right_shoulder",
+      "chest",
+      "left_arm",
+      "right_arm",
+    ],
+  },
+  { label: "Core", ids: ["abdomen", "lower_back"] },
+  {
+    label: "Lower Body",
+    ids: [
+      "left_hip",
+      "right_hip",
+      "left_thigh",
+      "right_thigh",
+      "left_knee",
+      "right_knee",
+      "left_leg",
+      "right_leg",
+      "feet",
+    ],
+  },
 ];
 
 type Mode = "pain" | "recovered";
@@ -31,25 +60,31 @@ interface PainReporterProps {
   markedParts?: MarkedParts;
 }
 
-export function PainReporter({ onChange, markedParts: controlled }: PainReporterProps) {
+export function PainReporter({
+  onChange,
+  markedParts: controlled,
+}: PainReporterProps) {
   const [mode, setMode] = useState<Mode>("pain");
   const [internal, setInternal] = useState<MarkedParts>({});
   const markedParts = controlled ?? internal;
   const viewerRef = useRef<BodyViewerHandle>(null);
 
-  const togglePart = useCallback((id: string) => {
-    const current = controlled ?? internal;
-    const next = { ...current };
-    if (next[id] === (mode as BodyPartStatus)) {
-      delete next[id];
-    } else {
-      next[id] = mode as BodyPartStatus;
-    }
-    startTransition(() => {
-      if (controlled === undefined) setInternal(next);
-      onChange?.(next);
-    });
-  }, [mode, onChange, controlled, internal]);
+  const togglePart = useCallback(
+    (id: string) => {
+      const current = controlled ?? internal;
+      const next = { ...current };
+      if (next[id] === (mode as BodyPartStatus)) {
+        delete next[id];
+      } else {
+        next[id] = mode as BodyPartStatus;
+      }
+      startTransition(() => {
+        if (controlled === undefined) setInternal(next);
+        onChange?.(next);
+      });
+    },
+    [mode, onChange, controlled, internal],
+  );
 
   const handleHover = useCallback((id: string | null) => {
     viewerRef.current?.hoverPart(id);
@@ -65,15 +100,18 @@ export function PainReporter({ onChange, markedParts: controlled }: PainReporter
       <div className="relative flex-1">
         <BodyViewer ref={viewerRef} markedParts={markedParts} />
 
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-5 bg-black/40 backdrop-blur-sm border border-white/10 rounded-full px-5 py-2">
+        <div className="absolute bottom-[31%] right-5 flex flex-col gap-1.5 bg-black/40 backdrop-blur-sm border border-white/10 rounded-xl px-3 py-2">
           <span className="flex items-center gap-1.5 text-xs text-slate-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#7a9cc4] inline-block" /> Normal
+            <span className="w-2.5 h-2.5 rounded-full bg-[#7a9cc4] inline-block" />{" "}
+            Normal
           </span>
           <span className="flex items-center gap-1.5 text-xs text-slate-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Pain
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />{" "}
+            Pain
           </span>
           <span className="flex items-center gap-1.5 text-xs text-slate-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Recovered
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />{" "}
+            Recovered
           </span>
         </div>
 
@@ -84,8 +122,12 @@ export function PainReporter({ onChange, markedParts: controlled }: PainReporter
 
       <aside className="w-72 flex flex-col bg-[#0d1120] border-l border-white/5 overflow-hidden select-none">
         <div className="px-5 pt-5 pb-4 border-b border-white/5">
-          <h1 className="text-sm font-bold tracking-widest uppercase text-slate-300 mb-1">Body Map</h1>
-          <p className="text-[11px] text-slate-600">Select a body part to mark it</p>
+          <h1 className="text-sm font-bold tracking-widest uppercase text-slate-300 mb-1">
+            Body Map
+          </h1>
+          <p className="text-[11px] text-slate-600">
+            Select a body part to mark it
+          </p>
         </div>
 
         <div className="px-4 py-3 border-b border-white/5">
@@ -113,7 +155,7 @@ export function PainReporter({ onChange, markedParts: controlled }: PainReporter
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+        <div className="scroll-dark flex-1 overflow-y-auto px-3 py-3 space-y-4">
           {GROUPS.map((group) => (
             <div key={group.label}>
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 px-1 mb-2">
@@ -133,12 +175,16 @@ export function PainReporter({ onChange, markedParts: controlled }: PainReporter
                         state === "pain"
                           ? "bg-red-950/60 border-red-700/50 text-red-300 shadow-sm shadow-red-900/30"
                           : state === "recovered"
-                          ? "bg-emerald-950/60 border-emerald-700/50 text-emerald-300 shadow-sm shadow-emerald-900/30"
-                          : "bg-white/[0.03] border-white/5 text-slate-400 hover:bg-white/[0.07] hover:text-slate-200 hover:border-white/10"
+                            ? "bg-emerald-950/60 border-emerald-700/50 text-emerald-300 shadow-sm shadow-emerald-900/30"
+                            : "bg-white/[0.03] border-white/5 text-slate-400 hover:bg-white/[0.07] hover:text-slate-200 hover:border-white/10"
                       }`}
                     >
-                      <span className="text-base leading-none">{part.icon}</span>
-                      <span className="flex-1 text-xs font-medium">{part.label}</span>
+                      <span className="text-base leading-none">
+                        {part.icon}
+                      </span>
+                      <span className="flex-1 text-xs font-medium">
+                        {part.label}
+                      </span>
                       {state && (
                         <span
                           className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${

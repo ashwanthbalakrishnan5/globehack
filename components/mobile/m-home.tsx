@@ -252,8 +252,9 @@ export function MHome() {
               { n: "06", date: "apr 10", tag: '"hip feels locked"', hrv: "+12" },
               { n: "05", date: "apr 03", tag: '"slept great"', hrv: "+7" },
             ].map((s, i) => (
-              <div
+              <Link
                 key={i}
+                href="/client/summary"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -262,6 +263,7 @@ export function MHome() {
                   background: "var(--ink-2)",
                   borderRadius: 12,
                   border: "1px solid var(--ink-3)",
+                  textDecoration: "none",
                 }}
               >
                 <div
@@ -305,7 +307,7 @@ export function MHome() {
                 <span className="mono" style={{ fontSize: 11, color: "var(--fog-3)" }}>
                   →
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

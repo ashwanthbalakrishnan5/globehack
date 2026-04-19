@@ -287,8 +287,10 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
       <div
         style={{
           flex: 1,
+          minHeight: 0,
           display: "grid",
           gridTemplateColumns: "1fr 380px",
+          gridTemplateRows: "1fr",
           overflow: "hidden",
         }}
       >
@@ -352,6 +354,7 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
 
             <div
               ref={transcriptRef}
+              className="scroll-dark"
               style={{
                 flex: 1,
                 overflowY: "auto",

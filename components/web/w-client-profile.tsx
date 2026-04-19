@@ -1,31 +1,29 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Tag } from "@/components/primitives";
 import { StatBlock, WHeader, WShell } from "./shell";
+import type { MarkedParts } from "@/components/features/body-viewer";
 
-function BodyMap() {
-  return (
-    <svg width="100%" height="200" viewBox="0 0 120 200" style={{ display: "block" }}>
-      <path
-        d="M60 10 a10 10 0 0 1 0 20 a10 10 0 0 1 0 -20 M40 35 h40 v30 l15 40 l-8 3 l-12 -30 v50 l6 55 h-10 l-6 -45 h-10 l-6 45 h-10 l6 -55 v-50 l-12 30 l-8 -3 l15 -40 z"
-        fill="var(--ink-3)"
-        stroke="var(--ink-4)"
-        strokeWidth="0.5"
-      />
-      <circle cx="48" cy="42" r="8" fill="var(--flare)" opacity="0.7">
-        <animate attributeName="r" values="6;10;6" dur="2s" repeatCount="indefinite" />
-      </circle>
-      <circle cx="60" cy="105" r="6" fill="var(--spark)" opacity="0.6" />
-      <circle cx="70" cy="80" r="5" fill="var(--spark)" opacity="0.5" />
-      <text x="78" y="45" fontSize="6" fill="var(--flare)" fontFamily="var(--mono)">
-        L trap ×4
-      </text>
-      <text x="72" y="110" fontSize="6" fill="var(--spark)" fontFamily="var(--mono)">
-        low back
-      </text>
-    </svg>
-  );
-}
+const BodyViewer = dynamic(() => import("@/components/features/body-viewer"), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{
+        width: "100%",
+        height: 300,
+        background: "var(--ink-1)",
+        borderRadius: 10,
+      }}
+    />
+  ),
+});
+
+const MARCUS_ZONES: MarkedParts = {
+  left_shoulder: "pain",
+  lower_back: "pain",
+  right_hip: "pain",
+};
 
 function BigChart() {
   const data = [72, 68, 70, 66, 63, 58, 60, 56, 54, 52, 55, 53, 50, 54];
@@ -40,10 +38,14 @@ function BigChart() {
     const y = h - ((v - min) / range) * (h - 20) - 10;
     return { x, y, v };
   });
-  const pathD = "M " + pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L ");
+  const pathD =
+    "M " + pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L ");
   const fillD = pathD + ` L ${w},${h} L 0,${h} Z`;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height: "auto", display: "block" }}>
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      style={{ width: "100%", height: "auto", display: "block" }}
+    >
       <defs>
         <linearGradient id="bgFill" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0" stopColor="var(--signal)" stopOpacity="0.3" />
@@ -54,8 +56,21 @@ function BigChart() {
         const y = h - ((v - min) / range) * (h - 20) - 10;
         return (
           <g key={v}>
-            <line x1="0" x2={w} y1={y} y2={y} stroke="var(--ink-3)" strokeDasharray="2 4" />
-            <text x="4" y={y - 3} fontSize="9" fill="var(--fog-3)" fontFamily="var(--mono)">
+            <line
+              x1="0"
+              x2={w}
+              y1={y}
+              y2={y}
+              stroke="var(--ink-3)"
+              strokeDasharray="2 4"
+            />
+            <text
+              x="4"
+              y={y - 3}
+              fontSize="9"
+              fill="var(--fog-3)"
+              fontFamily="var(--mono)"
+            >
               {v}ms
             </text>
           </g>
@@ -92,15 +107,46 @@ function BigChart() {
         const p = pts[i];
         return (
           <g key={i}>
-            <line x1={p.x} x2={p.x} y1={0} y2={h} stroke="var(--signal)" strokeDasharray="2 3" opacity="0.3" />
-            <circle cx={p.x} cy={p.y} r="5" fill="var(--signal-ink)" stroke="var(--signal)" strokeWidth="2" />
+            <line
+              x1={p.x}
+              x2={p.x}
+              y1={0}
+              y2={h}
+              stroke="var(--signal)"
+              strokeDasharray="2 3"
+              opacity="0.3"
+            />
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r="5"
+              fill="var(--signal-ink)"
+              stroke="var(--signal)"
+              strokeWidth="2"
+            />
           </g>
         );
       })}
-      <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="8" fill="var(--signal)" opacity="0.3">
-        <animate attributeName="r" values="6;10;6" dur="2s" repeatCount="indefinite" />
+      <circle
+        cx={pts[pts.length - 1].x}
+        cy={pts[pts.length - 1].y}
+        r="8"
+        fill="var(--signal)"
+        opacity="0.3"
+      >
+        <animate
+          attributeName="r"
+          values="6;10;6"
+          dur="2s"
+          repeatCount="indefinite"
+        />
       </circle>
-      <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="3" fill="var(--signal)" />
+      <circle
+        cx={pts[pts.length - 1].x}
+        cy={pts[pts.length - 1].y}
+        r="3"
+        fill="var(--signal)"
+      />
     </svg>
   );
 }
@@ -113,14 +159,31 @@ export function WClientProfile() {
         sub="client · paired 6 weeks · 7 sessions"
         right={
           <div style={{ display: "flex", gap: 24 }}>
-            <StatBlock value="+74ms" label="cum. HRV lift" color="var(--signal)" />
+            <StatBlock
+              value="+74ms"
+              label="cum. HRV lift"
+              color="var(--signal)"
+            />
             <StatBlock value="$1,050" label="lifetime rev" />
             <StatBlock value="1.2w" label="avg rebook" />
           </div>
         }
       />
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "280px 1fr 340px", overflow: "hidden" }}>
-        <div style={{ borderRight: "1px solid var(--ink-3)", padding: "20px 20px", overflow: "auto" }}>
+      <div
+        style={{
+          flex: 1,
+          display: "grid",
+          gridTemplateColumns: "280px 1fr 340px",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            borderRight: "1px solid var(--ink-3)",
+            padding: "20px 20px",
+            overflow: "auto",
+          }}
+        >
           <div
             style={{
               width: 80,
@@ -139,11 +202,30 @@ export function WClientProfile() {
           >
             MR
           </div>
-          <div style={{ marginTop: 14, fontSize: 18, color: "var(--fog-0)", fontWeight: 500 }}>Marcus Rivera</div>
-          <div className="mono" style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 3 }}>
+          <div
+            style={{
+              marginTop: 14,
+              fontSize: 18,
+              color: "var(--fog-0)",
+              fontWeight: 500,
+            }}
+          >
+            Marcus Rivera
+          </div>
+          <div
+            className="mono"
+            style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 3 }}
+          >
             34 · she/her · austin
           </div>
-          <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 2 }}>
+          <div
+            style={{
+              marginTop: 16,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
             {[
               ["endurance athlete", "profile"],
               ["apr 10 (7d ago)", "last visit"],
@@ -159,19 +241,44 @@ export function WClientProfile() {
                   borderBottom: i < 3 ? "1px solid var(--ink-3)" : "none",
                 }}
               >
-                <span className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)" }}>{k}</span>
+                <span
+                  className="mono upper"
+                  style={{ fontSize: 9, color: "var(--fog-3)" }}
+                >
+                  {k}
+                </span>
                 <span style={{ fontSize: 12, color: "var(--fog-0)" }}>{v}</span>
               </div>
             ))}
           </div>
-          <div className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)", marginTop: 20, marginBottom: 10 }}>
+          <div
+            className="mono upper"
+            style={{
+              fontSize: 9,
+              color: "var(--fog-3)",
+              marginTop: 20,
+              marginBottom: 10,
+            }}
+          >
             body map · hot spots
           </div>
-          <BodyMap />
+          <div
+            style={{
+              height: 300,
+              borderRadius: 10,
+              overflow: "hidden",
+              border: "1px solid var(--ink-3)",
+            }}
+          >
+            <BodyViewer markedParts={MARCUS_ZONES} background="#0a0d14" />
+          </div>
         </div>
 
         <div style={{ padding: "20px 24px", overflow: "auto" }}>
-          <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)", marginBottom: 14 }}>
+          <div
+            className="mono upper"
+            style={{ fontSize: 10, color: "var(--fog-3)", marginBottom: 14 }}
+          >
             HRV · 14d rolling · session markers
           </div>
           <div
@@ -186,7 +293,10 @@ export function WClientProfile() {
             <BigChart />
           </div>
 
-          <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)", marginBottom: 12 }}>
+          <div
+            className="mono upper"
+            style={{ fontSize: 10, color: "var(--fog-3)", marginBottom: 12 }}
+          >
             session timeline
           </div>
           <div style={{ position: "relative", paddingLeft: 24 }}>
@@ -201,7 +311,13 @@ export function WClientProfile() {
               }}
             />
             {[
-              { n: 7, d: "today", q: '"left trap is worse this week"', hrv: "+18", live: true },
+              {
+                n: 7,
+                d: "today",
+                q: '"left trap is worse this week"',
+                hrv: "+18",
+                live: true,
+              },
               { n: 6, d: "apr 10", q: '"hip feels locked"', hrv: "+12" },
               { n: 5, d: "apr 03", q: '"slept great"', hrv: "+7" },
               { n: 4, d: "mar 27", q: '"low back tight"', hrv: "+9" },
@@ -220,11 +336,21 @@ export function WClientProfile() {
                     border: s.live ? "none" : "2px solid var(--ink-0)",
                   }}
                 />
-                <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                  <span className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)" }}>
+                <div
+                  style={{ display: "flex", alignItems: "baseline", gap: 10 }}
+                >
+                  <span
+                    className="mono upper"
+                    style={{ fontSize: 9, color: "var(--fog-3)" }}
+                  >
                     session {s.n}
                   </span>
-                  <span className="mono" style={{ fontSize: 9, color: "var(--fog-3)" }}>· {s.d}</span>
+                  <span
+                    className="mono"
+                    style={{ fontSize: 9, color: "var(--fog-3)" }}
+                  >
+                    · {s.d}
+                  </span>
                   {s.live && (
                     <Tag color="var(--signal)" variant="solid">
                       today
@@ -242,7 +368,10 @@ export function WClientProfile() {
                 >
                   {s.q}
                 </div>
-                <div className="mono" style={{ fontSize: 9, color: "var(--signal)", marginTop: 2 }}>
+                <div
+                  className="mono"
+                  style={{ fontSize: 9, color: "var(--signal)", marginTop: 2 }}
+                >
                   hrv {s.hrv}ms
                 </div>
               </div>
@@ -258,7 +387,10 @@ export function WClientProfile() {
             background: "var(--ink-1)",
           }}
         >
-          <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)", marginBottom: 10 }}>
+          <div
+            className="mono upper"
+            style={{ fontSize: 10, color: "var(--fog-3)", marginBottom: 10 }}
+          >
             personal pattern · learned
           </div>
           <div
@@ -273,19 +405,40 @@ export function WClientProfile() {
               <svg width="12" height="12" viewBox="0 0 12 12">
                 <circle cx="6" cy="6" r="4" fill="var(--signal)" />
               </svg>
-              <span className="mono upper" style={{ fontSize: 10, color: "var(--signal)" }}>
+              <span
+                className="mono upper"
+                style={{ fontSize: 10, color: "var(--signal)" }}
+              >
                 her rebook rhythm
               </span>
             </div>
-            <div style={{ fontSize: 12, color: "var(--fog-0)", marginTop: 8, lineHeight: 1.4 }}>
-              Books every 12–14 days. Last visit was 12 days ago, she&rsquo;s due.
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--fog-0)",
+                marginTop: 8,
+                lineHeight: 1.4,
+              }}
+            >
+              Books every 12–14 days. Last visit was 12 days ago, she&rsquo;s
+              due.
             </div>
-            <div className="mono" style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 8 }}>
+            <div
+              className="mono"
+              style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 8 }}
+            >
               → next opening: Thursday 2pm
             </div>
           </div>
 
-          <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)", margin: "20px 0 10px" }}>
+          <div
+            className="mono upper"
+            style={{
+              fontSize: 10,
+              color: "var(--fog-3)",
+              margin: "20px 0 10px",
+            }}
+          >
             recurring themes
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -308,8 +461,13 @@ export function WClientProfile() {
                   border: "1px solid var(--ink-3)",
                 }}
               >
-                <span style={{ fontSize: 12, color: "var(--fog-0)" }}>{t.t}</span>
-                <span className="mono tnum" style={{ fontSize: 11, color: "var(--signal)" }}>
+                <span style={{ fontSize: 12, color: "var(--fog-0)" }}>
+                  {t.t}
+                </span>
+                <span
+                  className="mono tnum"
+                  style={{ fontSize: 11, color: "var(--signal)" }}
+                >
                   ×{t.n}
                 </span>
               </div>

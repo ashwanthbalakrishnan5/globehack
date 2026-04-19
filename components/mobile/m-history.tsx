@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { MScreen } from "./shell";
 import { HRVSpark, Tag } from "@/components/primitives";
 
@@ -43,14 +44,16 @@ export function MHistory() {
         </div>
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column" }}>
           {sessions.map((s, i) => (
-            <div
+            <Link
               key={i}
+              href="/client/summary"
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 14,
                 padding: "14px 4px",
                 borderBottom: i < sessions.length - 1 ? "1px solid var(--ink-3)" : "none",
+                textDecoration: "none",
               }}
             >
               <div
@@ -91,8 +94,8 @@ export function MHistory() {
                   <span className="mono" style={{ fontSize: 9, color: "var(--fog-3)" }}>{s.dur}</span>
                 </div>
               </div>
-              {s.flare && <Tag color="var(--signal)">new</Tag>}
-            </div>
+              {s.flare ? <Tag color="var(--signal)">new</Tag> : <span className="mono" style={{ fontSize: 11, color: "var(--fog-3)" }}>→</span>}
+            </Link>
           ))}
         </div>
       </div>

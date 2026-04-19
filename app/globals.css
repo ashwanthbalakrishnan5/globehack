@@ -37,6 +37,18 @@ input, textarea, select, button {
 
 button { -webkit-tap-highlight-color: transparent; }
 
+.scroll-dark {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-4) transparent;
+}
+.scroll-dark::-webkit-scrollbar { width: 4px; }
+.scroll-dark::-webkit-scrollbar-track { background: transparent; }
+.scroll-dark::-webkit-scrollbar-thumb {
+  background: var(--ink-4);
+  border-radius: 999px;
+}
+.scroll-dark::-webkit-scrollbar-thumb:hover { background: var(--ink-5, #3a3f50); }
+
 @supports (padding: max(0px)) {
   .safe-bottom {
     padding-bottom: max(14px, env(safe-area-inset-bottom));

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { MScreen } from "./shell";
 import { Meter } from "@/components/primitives";
@@ -162,8 +163,8 @@ export function MSummarySheet({ card, onClose }: Props) {
 
               <div style={{ flex: 1 }} />
               <div style={{ paddingBottom: 32, display: "flex", gap: 8 }}>
-                <button
-                  onClick={onClose}
+                <Link
+                  href="/client/summary"
                   style={{
                     flex: 1,
                     height: 52,
@@ -175,10 +176,28 @@ export function MSummarySheet({ card, onClose }: Props) {
                     fontWeight: 600,
                     fontFamily: "var(--sans)",
                     boxShadow: "var(--glow-signal)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textDecoration: "none",
+                  }}
+                >
+                  View &amp; share card
+                </Link>
+                <button
+                  onClick={onClose}
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 14,
+                    background: "var(--ink-2)",
+                    border: "1px solid var(--ink-3)",
+                    color: "var(--fog-2)",
+                    fontSize: 18,
                     cursor: "pointer",
                   }}
                 >
-                  Done
+                  ×
                 </button>
               </div>
             </div>

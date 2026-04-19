@@ -208,12 +208,13 @@ export function WShell({
     <div
       style={{
         width: "100%",
-        minHeight: "100vh",
+        height: "100vh",
         background: "var(--ink-0)",
         color: "var(--fog-0)",
         fontFamily: "var(--sans)",
         display: "flex",
         position: "relative",
+        overflow: "hidden",
       }}
     >
       <WSidebar active={pageName} />
@@ -224,7 +225,8 @@ export function WShell({
           position: "relative",
           display: "flex",
           flexDirection: "column",
-          minHeight: "100vh",
+          height: "100vh",
+          overflow: "hidden",
         }}
       >
         {children}
