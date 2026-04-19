@@ -2,6 +2,8 @@
 
 **GlobeHack Season 1 · Hydrawav3 Recovery Intelligence track**
 
+**Live:** [hydrawav3.vercel.app](https://hydrawav3.vercel.app)
+
 A realtime recovery layer for the Hydrawav3 belt. One Next.js app, two synchronized surfaces, a streaming AI pipeline, and a pair of deterministic rule engines for clinical judgment. The client's phone and the practitioner's tablet stay in lockstep from check-in to share card.
 
 ---
