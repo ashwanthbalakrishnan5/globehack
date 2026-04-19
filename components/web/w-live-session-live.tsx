@@ -11,6 +11,10 @@ import { subscribeChannel } from "@/lib/realtime";
 import { useBodyState } from "@/lib/body-state";
 import type { SessionNote } from "@/lib/types";
 import type { BodyPartStatus } from "@/components/features/body-viewer";
+import { PoseCapturePanel } from "@/components/features/pose-capture-panel";
+import { PoseComparison } from "@/components/features/pose-comparison";
+import { usePoseStore } from "@/lib/pose-store";
+import { MOVEMENTS } from "@/components/features/pose-capture";
 
 const BodyViewer = dynamic(() => import("@/components/features/body-viewer"), {
   ssr: false,
@@ -119,6 +123,7 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
 
   const zones = useBodyState((s) => s.zones[clientId] ?? {});
   const mergeZones = useBodyState((s) => s.mergeZones);
+  const captures = usePoseStore((s) => s.captures);
 
   useEffect(() => {
     const unsub = subscribeChannel<{ zones: { id: string; status: BodyPartStatus }[] }>(
@@ -136,7 +141,7 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
     fetch("/demo-transcript.json")
       .then((r) => r.json())
       .then((data) => { fallbackSegs.current = data.segments ?? []; })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Subscribe to realtime notes
@@ -390,46 +395,21 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
           </div>
           <div
             style={{
-              padding: "8px 10px",
+              padding: "10px 12px",
               borderRadius: 10,
-              background: "rgba(212,244,90,0.04)",
-              border: "1px dashed rgba(212,244,90,0.22)",
+              background: "rgba(10,13,20,0.88)",
+              border: "1px solid rgba(212,244,90,0.22)",
               marginBottom: 12,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
             }}
           >
-            <div
-              style={{
-                width: 22,
-                height: 22,
-                borderRadius: 6,
-                background: "rgba(212,244,90,0.08)",
-                border: "1px solid rgba(212,244,90,0.25)",
-                position: "relative",
-                overflow: "hidden",
-                flexShrink: 0,
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  height: 2,
-                  background: "rgba(212,244,90,0.65)",
-                  boxShadow: "0 0 6px rgba(212,244,90,0.8)",
-                  animation: "scan 1.8s linear infinite",
-                }}
-              />
-            </div>
-            <div>
-              <div className="mono upper" style={{ fontSize: 9, color: "var(--signal)" }}>Vision context</div>
-              <div className="mono" style={{ fontSize: 9, color: "var(--fog-3)" }}>
-                CV movement read · coming soon
-              </div>
-            </div>
+            {/* Show comparison for any movement that has both before + after */}
+            {MOVEMENTS.map((m) => {
+              const before = captures[`${clientId}:before:${m.id}`];
+              const after = captures[`${clientId}:after:${m.id}`];
+              if (!before || !after) return null;
+              return <PoseComparison key={m.id} before={before} after={after} />;
+            })}
+            <PoseCapturePanel clientId={clientId} phase="after" />
           </div>
 
           <div className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)", marginBottom: 10 }}>
