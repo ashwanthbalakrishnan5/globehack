@@ -1,25 +1,50 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MScreen } from "./shell";
 import { Meter } from "@/components/primitives";
 import type { SummaryCard } from "@/lib/types";
 
+const BodyViewer = dynamic(() => import("@/components/features/body-viewer"), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        background: "radial-gradient(circle at 50% 60%, rgba(212,244,90,0.08), #0a0d14 70%)",
+      }}
+    />
+  ),
+});
+
 interface Props {
   card?: SummaryCard | null;
+  summaryId?: string | null;
 }
 
-export function MSummaryExpanded({ card }: Props) {
+export function MSummaryExpanded({ card, summaryId }: Props) {
   const quote = card?.quote ?? "Left trap is worse this week.";
   const durationMin = card?.duration_min ?? 42;
   const hrvAtSession = card?.hrv_at_session ?? 50;
+  const bodyBefore = card?.body_before ?? {};
+  const bodyAfter = card?.body_after ?? {};
+  const hasBody = Object.keys(bodyBefore).length > 0 || Object.keys(bodyAfter).length > 0;
 
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [sharing, startShare] = useTransition();
   const [liked, setLiked] = useState(false);
+  const [showAfter, setShowAfter] = useState(false);
+
+  useEffect(() => {
+    if (!hasBody) return;
+    const t = setInterval(() => setShowAfter((v) => !v), 2200);
+    return () => clearInterval(t);
+  }, [hasBody]);
 
   const handleShare = () => {
     startShare(async () => {
@@ -37,6 +62,9 @@ export function MSummaryExpanded({ card }: Props) {
         );
         if (!blob) return;
         const file = new File([blob], "tide-session.png", { type: "image/png" });
+        const shareUrl = summaryId
+          ? `${window.location.origin}/share/${summaryId}`
+          : window.location.origin;
         if (
           typeof navigator !== "undefined" &&
           "share" in navigator &&
@@ -47,6 +75,7 @@ export function MSummaryExpanded({ card }: Props) {
             files: [file],
             title: "Tide · session summary",
             text: quote,
+            url: shareUrl,
           });
           return;
         }
@@ -56,6 +85,11 @@ export function MSummaryExpanded({ card }: Props) {
         a.download = "tide-session.png";
         a.click();
         URL.revokeObjectURL(url);
+        window.open(
+          `https://twitter.com/intent/tweet?text=${encodeURIComponent(quote)}&url=${encodeURIComponent(shareUrl)}`,
+          "_blank",
+          "noopener,noreferrer"
+        );
       } catch (e) {
         console.error("share failed", e);
       }
@@ -124,17 +158,64 @@ export function MSummaryExpanded({ card }: Props) {
             &ldquo;{quote.length > 60 ? quote.slice(0, 60) + "…" : quote}&rdquo;
           </div>
         </div>
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 20, marginBottom: 8 }}>
-          <div
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(212,244,90,0.4), transparent)",
-              filter: "blur(8px)",
-            }}
-          />
-        </div>
+        {hasBody ? (
+          <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {(["before", "after"] as const).map((kind) => (
+              <div
+                key={kind}
+                style={{
+                  height: 180,
+                  borderRadius: 14,
+                  border: "1px solid var(--ink-3)",
+                  background: "var(--ink-1)",
+                  overflow: "hidden",
+                  position: "relative",
+                }}
+              >
+                <BodyViewer
+                  markedParts={kind === "before" ? bodyBefore : bodyAfter}
+                  background="#0a0d14"
+                />
+                <AnimatePresence>
+                  {((kind === "before" && !showAfter) || (kind === "after" && showAfter)) && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      style={{
+                        position: "absolute",
+                        top: 10,
+                        left: 10,
+                        padding: "2px 8px",
+                        borderRadius: 999,
+                        background: "rgba(212,244,90,0.16)",
+                        color: "var(--signal)",
+                        fontSize: 9,
+                        letterSpacing: 0.12,
+                        textTransform: "uppercase",
+                        fontFamily: "var(--mono)",
+                      }}
+                    >
+                      {kind}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 20, marginBottom: 8 }}>
+            <div
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(212,244,90,0.4), transparent)",
+                filter: "blur(8px)",
+              }}
+            />
+          </div>
+        )}
         <div
           style={{
             marginTop: 14,

@@ -77,6 +77,8 @@ export interface RelapseFlag {
   created_at: string;
 }
 
+export type BodyZoneMap = Record<string, "pain" | "recovered" | "active">;
+
 export interface SummaryCard {
   headline: string;
   protocol_used: string;
@@ -85,6 +87,8 @@ export interface SummaryCard {
   next_steps: string;
   hrv_at_session: number;
   quote: string | null;
+  body_before?: BodyZoneMap;
+  body_after?: BodyZoneMap;
 }
 
 export interface Protocol {

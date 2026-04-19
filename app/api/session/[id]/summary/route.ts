@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforgeServer } from "@/lib/insforge";
-import type { Session, SessionNote, SummaryCard } from "@/lib/types";
+import type { BodyZoneMap, Session, SessionNote, SummaryCard } from "@/lib/types";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: sessionId } = await params;
+  const payload = (await req.json().catch(() => ({}))) as {
+    bodyBefore?: BodyZoneMap;
+    bodyAfter?: BodyZoneMap;
+  };
   const db = insforgeServer();
 
   const [{ data: session }, { data: notes }] = await Promise.all([
@@ -17,6 +21,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const flaggedNotes = n.filter((note) => note.flagged);
   const quote = flaggedNotes[0]?.quote ?? null;
 
+  const bodyBefore = payload.bodyBefore ?? {};
+  const recoveredFromBefore = Object.fromEntries(
+    Object.entries(bodyBefore).map(([id, status]) => [id, status === "pain" ? "recovered" : status])
+  ) as BodyZoneMap;
+  const bodyAfter = payload.bodyAfter && Object.keys(payload.bodyAfter).length
+    ? payload.bodyAfter
+    : recoveredFromBefore;
+
   const card: SummaryCard = {
     headline: "Parasympathetic reset, cooling.",
     protocol_used: s?.protocol_used ?? "Cooling Emphasis with 40 Hz Lymphatic Vibration",
@@ -25,6 +37,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     next_steps: "Continue cooling protocol. Monitor left trap. Schedule follow-up in 7 days.",
     hrv_at_session: 50,
     quote,
+    body_before: bodyBefore,
+    body_after: bodyAfter,
   };
 
   await db.database

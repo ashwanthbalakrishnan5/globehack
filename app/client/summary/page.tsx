@@ -8,13 +8,15 @@ export default async function Page() {
 
   const { data: sessions } = await db.database
     .from("sessions")
-    .select("summary_card")
+    .select("id, summary_card")
     .eq("client_id", clientId)
     .not("summary_card", "is", null)
     .order("ended_at", { ascending: false })
     .limit(1);
 
-  const card = ((sessions as { summary_card: SummaryCard }[] | null)?.[0]?.summary_card) ?? null;
+  const row = (sessions as { id: string; summary_card: SummaryCard }[] | null)?.[0];
+  const card = row?.summary_card ?? null;
+  const summaryId = row?.id ?? null;
 
-  return <MSummaryExpanded card={card} />;
+  return <MSummaryExpanded card={card} summaryId={summaryId} />;
 }
