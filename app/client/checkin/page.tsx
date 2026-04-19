@@ -25,7 +25,7 @@ function CheckinHandler() {
 
   const runCheckIn = useCallback(
     async (checkinToken?: string) => {
-      const clientId = process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
+      const clientId = process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "alina-zhou";
       setPosting(true);
       setFailed(null);
       try {
@@ -43,6 +43,15 @@ function CheckinHandler() {
         if (data.sessionId) {
           startCheckIn(clientId, data.sessionId, checkinToken ? "qr" : "simulated");
           setSynced(true);
+          // Re-publish Health Connect after scan so the practitioner animates
+          // data arriving once they're on the session page.
+          setTimeout(() => {
+            fetch("/api/onboarding/health-connect", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ clientId }),
+            }).catch(() => { /* non-fatal for demo */ });
+          }, 1200);
         }
       } catch (e) {
         setFailed((e as Error).message ?? "Network error");

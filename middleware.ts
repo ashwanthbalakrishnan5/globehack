@@ -23,11 +23,7 @@ export function middleware(req: NextRequest) {
 
   if (pathname === "/") {
     const url = req.nextUrl.clone();
-    if (!authed) {
-      url.pathname = isMobile ? "/client/login" : "/practitioner/login";
-    } else {
-      url.pathname = isMobile ? "/client" : "/practitioner";
-    }
+    url.pathname = isMobile ? "/client/login" : "/practitioner/login";
     return NextResponse.redirect(url);
   }
 

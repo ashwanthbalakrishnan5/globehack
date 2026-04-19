@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const { data: session, error } = await db.database
     .from("sessions")
     .insert({
-      client_id: clientId ?? process.env.DEMO_CLIENT_ID ?? "marcus-rivera",
+      client_id: clientId ?? process.env.DEMO_CLIENT_ID ?? "alina-zhou",
       practitioner_id: practitionerId,
       started_at: new Date().toISOString(),
       protocol_used: "Cooling Emphasis with 40 Hz Lymphatic Vibration",
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     await db.realtime.subscribe(`checkin:${practitionerId}`);
     await db.realtime.publish(`checkin:${practitionerId}`, "checked_in", {
       sessionId,
-      clientId: clientId ?? process.env.DEMO_CLIENT_ID ?? "marcus-rivera",
+      clientId: clientId ?? process.env.DEMO_CLIENT_ID ?? "alina-zhou",
     });
   } catch (e) {
     console.warn("Realtime publish failed:", e);

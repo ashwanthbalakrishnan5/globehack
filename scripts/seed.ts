@@ -34,13 +34,18 @@ async function main() {
 
   console.log("Seeding clients...");
   await upsert("clients", [
+    { id: "alina-zhou", practitioner_id: "maya-reyes", name: "Alina Zhou", initials: "AZ", age: 29, profile: "UX designer. Runs 3-4x/week, pickup football on Saturdays, lifts twice a week. First session.", paired_on: "2026-04-18", session_count: 0, next_booked_on: "2026-04-18" },
     { id: "marcus-rivera", practitioner_id: "maya-reyes", name: "Marcus Rivera", initials: "MR", age: 34, profile: "Endurance athlete, marathoner. Declining recovery metrics over 14 days.", paired_on: "2025-10-01", session_count: 7, next_booked_on: "2026-04-18" },
     { id: "sarah-chen", practitioner_id: "maya-reyes", name: "Sarah Chen", initials: "SC", age: 41, profile: "Yoga instructor, stable metrics. Returning after a 6-week break.", paired_on: "2025-09-15", session_count: 5, next_booked_on: "2026-04-18" },
     { id: "jessica-park", practitioner_id: "maya-reyes", name: "Jessica Park", initials: "JP", age: 37, profile: "Post-injury recovery, rotator cuff. Recurring shoulder complaints.", paired_on: "2025-08-20", session_count: 11, next_booked_on: "2026-04-25" },
   ]);
 
-  console.log("Seeding health snapshots (42 rows)...");
+  console.log("Seeding health snapshots (56 rows)...");
   const snapshots = [
+    ...([70,72,68,71,69,67,68,65,64,62,60,57,56,58] as const).map((hrv, i) => ({
+      client_id: "alina-zhou", captured_on: `2026-04-${String(5+i).padStart(2,"0")}`,
+      hrv_ms: hrv, resting_hr_bpm: [58,59,58,60,59,60,61,61,62,63,63,64,64,62][i], sleep_score: [82,80,81,78,79,80,76,72,70,68,62,58,55,64][i],
+    })),
     ...([72,70,68,65,63,67,62,60,58,55,58,54,52,50] as const).map((hrv, i) => ({
       client_id: "marcus-rivera", captured_on: `2026-04-${String(5+i).padStart(2,"0")}`,
       hrv_ms: hrv, resting_hr_bpm: [58,59,60,61,62,61,63,63,64,64,63,65,65,66][i], sleep_score: [78,76,74,72,70,71,69,68,65,63,62,60,57,55][i],

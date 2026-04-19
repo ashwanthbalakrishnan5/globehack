@@ -33,6 +33,27 @@ export const PRACTITIONER = {
 
 export const CLIENTS: Client[] = [
   {
+    id: "alina-zhou",
+    name: "Alina Zhou",
+    initials: "AZ",
+    age: 29,
+    profile: "UX designer. Runs 3-4x/week, pickup football on Saturdays, lifts twice a week. First session.",
+    pairedOn: "today",
+    sessionCount: 0,
+    nextBookedOn: "Apr 18",
+    latest: {
+      hrvMs: 58,
+      hrvTrendPct: -14,
+      restingHrBpm: 62,
+      restingHrDelta: 4,
+      sleepLabel: "6:12",
+      sleepPct: 64,
+    },
+    hrvTrend14: [70, 72, 68, 71, 69, 67, 68, 65, 64, 62, 60, 57, 56, 58],
+    priorNotes: [],
+    recurringThemes: [],
+  },
+  {
     id: "marcus-rivera",
     name: "Marcus Rivera",
     initials: "MR",

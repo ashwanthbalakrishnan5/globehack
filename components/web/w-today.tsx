@@ -1,15 +1,16 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { StatBlock, WHeader, WShell } from "./shell";
 import { RingGauge, Tag, WavePath } from "@/components/primitives";
 import { WCheckinQR } from "./w-checkin-qr";
+import { WClientCheckinModal } from "./w-client-checkin-modal";
 import type { Slot, Flag } from "@/lib/types";
 
 const FALLBACK_SLOTS = [
   { t: "9:00", id: "sarah-chen", name: "Sarah Chen", tag: "returning · 4th", readiness: 82, protocol: "Standard Balance", state: "done" as const, flag: false },
-  { t: "10:15", id: "alina-zhou", name: "Alina Zhou", tag: "new · first", readiness: 92, protocol: "Baseline scan", state: "done" as const, flag: false },
-  { t: "11:30", id: "marcus-rivera", name: "Marcus Rivera", tag: "returning · 7th", readiness: 54, protocol: "Parasympathetic · 40Hz", state: "now" as const, flag: false },
+  { t: "10:15", id: "marcus-rivera", name: "Marcus Rivera", tag: "returning · 7th", readiness: 54, protocol: "Parasympathetic · 40Hz", state: "done" as const, flag: false },
+  { t: "11:30", id: "alina-zhou", name: "Alina Zhou", tag: "new · first", readiness: 72, protocol: "Baseline · onboarding", state: "now" as const, flag: true },
   { t: "2:00", id: "priya-shah", name: "Priya Shah", tag: "returning · 2nd", readiness: 81, protocol: "Mobility · asymmetry", state: "soon" as const, flag: false },
   { t: "3:30", id: "sarah-chen", name: "Sarah Chen", tag: "returning · 5th", readiness: 68, protocol: "Recovery · cool", state: "soon" as const, flag: false },
   { t: "5:00", id: "lee-tran", name: "Lee Tran", tag: "returning · 3rd", readiness: 67, protocol: "Standard", state: "soon" as const, flag: false },
@@ -24,6 +25,8 @@ export function WToday({ liveSlots, liveFlags }: { liveSlots?: Slot[]; liveFlags
       })
     : FALLBACK_SLOTS;
   const slots = merged;
+  const [pairing, setPairing] = useState<{ id: string; name: string } | null>(null);
+
   return (
     <WShell pageName="today">
       <WHeader
@@ -44,9 +47,10 @@ export function WToday({ liveSlots, liveFlags }: { liveSlots?: Slot[]; liveFlags
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {slots.map((s, i) => (
-              <Link
+              <button
                 key={i}
-                href={s.id === "marcus-rivera" ? `/practitioner/session/${s.id}` : `/practitioner/clients/${s.id}`}
+                type="button"
+                onClick={() => setPairing({ id: s.id, name: s.name })}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -60,8 +64,11 @@ export function WToday({ liveSlots, liveFlags }: { liveSlots?: Slot[]; liveFlags
                   border: s.state === "now" ? "1px solid var(--signal)" : "1px solid var(--ink-3)",
                   opacity: s.state === "done" ? 0.55 : 1,
                   position: "relative",
-                  textDecoration: "none",
+                  textAlign: "left",
                   color: "inherit",
+                  cursor: "pointer",
+                  font: "inherit",
+                  width: "100%",
                 }}
               >
                 <div style={{ width: 58 }}>
@@ -119,7 +126,7 @@ export function WToday({ liveSlots, liveFlags }: { liveSlots?: Slot[]; liveFlags
                 >
                   →
                 </div>
-              </Link>
+              </button>
             ))}
           </div>
         </div>
@@ -160,7 +167,7 @@ export function WToday({ liveSlots, liveFlags }: { liveSlots?: Slot[]; liveFlags
               ? liveFlags.map((f) => ({ who: f.clientName, why: f.reason.slice(0, 48) }))
               : [
                   { who: "Jessica Park", why: "HRV declining, 21 days since last visit" },
-                  { who: "Marcus Rivera", why: "low readiness — 54" },
+                  { who: "Marcus Rivera", why: "low readiness, 54" },
                 ]
             ).map((a, i) => (
               <div
@@ -181,6 +188,13 @@ export function WToday({ liveSlots, liveFlags }: { liveSlots?: Slot[]; liveFlags
           </div>
         </div>
       </div>
+
+      <WClientCheckinModal
+        open={pairing !== null}
+        clientId={pairing?.id ?? ""}
+        clientName={pairing?.name ?? ""}
+        onClose={() => setPairing(null)}
+      />
     </WShell>
   );
 }

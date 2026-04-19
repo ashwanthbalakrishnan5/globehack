@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { SummaryListener } from "@/components/mobile/summary-listener";
 
-const DEMO_CLIENT_ID = process.env.DEMO_CLIENT_ID ?? "marcus-rivera";
+const DEMO_CLIENT_ID = process.env.DEMO_CLIENT_ID ?? "alina-zhou";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   return (

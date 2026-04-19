@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const clientId = (body.clientId as string | undefined) ?? process.env.DEMO_CLIENT_ID ?? "marcus-rivera";
+  const clientId = (body.clientId as string | undefined) ?? process.env.DEMO_CLIENT_ID ?? "alina-zhou";
   const sharingEnabled = Boolean(body.sharingEnabled);
 
   privacyStore.set(clientId, sharingEnabled);

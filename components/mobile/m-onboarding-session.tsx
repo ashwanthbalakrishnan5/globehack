@@ -34,7 +34,7 @@ type Segment = {
 
 export function MOnboardingSession() {
   const router = useRouter();
-  const clientId = useSession((s) => s.activeClientId) ?? process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
+  const clientId = useSession((s) => s.activeClientId) ?? process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "alina-zhou";
   const phase = useSession((s) => s.phase);
   const zones = useBodyState((s) => s.zones[clientId] ?? EMPTY_ZONES);
   const mergeZones = useBodyState((s) => s.mergeZones);

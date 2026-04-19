@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { PainReporter } from "@/components/features/pain-reporter";
 import { useBodyState, EMPTY_ZONES } from "@/lib/body-state";
 import { questionsForClient } from "@/lib/onboarding-questions";
@@ -22,11 +22,18 @@ type Segment = {
   zones: { id: string; status: BodyPartStatus }[];
 };
 
+type Stage = "analyzing" | "drafting" | "ready" | "playing";
+
 interface Props {
   clientId: string;
   clientName: string;
   clientProfile: string | null;
 }
+
+const ANALYZE_MS = 2200;
+const DRAFT_MS = 900;
+const QUESTION_REVEAL_MS = 650;
+const CONVERSATION_DELAY_MS = 1400;
 
 export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
   const zones = useBodyState((s) => s.zones[clientId] ?? EMPTY_ZONES);
@@ -35,15 +42,19 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
   const [segments, setSegments] = useState<Segment[]>([]);
   const [visibleCount, setVisibleCount] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [stage, setStage] = useState<Stage>("analyzing");
+  const [revealedQuestions, setRevealedQuestions] = useState(0);
+  const [, startTransition] = useTransition();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const zonesAppliedRef = useRef<Set<number>>(new Set());
+  const eventsSentRef = useRef<Set<number>>(new Set());
 
   const questions = useMemo(
-    () => questionsForClient(clientId, clientProfile),
+    () => questionsForClient(clientId, clientProfile).slice(0, 6),
     [clientId, clientProfile]
   );
 
-  // Preload transcript
   useEffect(() => {
     fetch("/demo-onboarding-transcript.json")
       .then((r) => r.json())
@@ -51,12 +62,10 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
       .catch(console.error);
   }, []);
 
-  // Clear any per-client prior state on mount so the demo starts clean
   useEffect(() => {
     setAll(clientId, {});
   }, [clientId, setAll]);
 
-  // Subscribe for any realtime zone updates from alternate sources
   useEffect(() => {
     const unsub = subscribeChannel<{ zones: { id: string; status: BodyPartStatus }[] }>(
       `body:${clientId}`,
@@ -71,33 +80,93 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
   const firePlayback = useCallback(() => {
     if (segments.length === 0 || playing) return;
     setPlaying(true);
+    setStage("playing");
     setVisibleCount(0);
+    zonesAppliedRef.current = new Set();
+    eventsSentRef.current = new Set();
 
     timers.current.forEach(clearTimeout);
     timers.current = [];
 
-    segments.forEach((seg, i) => {
-      const t = setTimeout(() => {
-        startTransition(() => {
-          setVisibleCount((c) => Math.max(c, i + 1));
-          if (seg.zones?.length) mergeZones(clientId, seg.zones);
-        });
+    const audio = audioRef.current;
+    audio?.play().catch(() => {
+      // Audio missing or autoplay blocked. Fall back to wall-clock timers.
+      segments.forEach((seg, i) => {
+        const t = setTimeout(() => {
+          revealSegment(i);
+        }, seg.start * 1000);
+        timers.current.push(t);
+      });
+    });
+
+    function revealSegment(i: number) {
+      const seg = segments[i];
+      if (!seg) return;
+      startTransition(() => {
+        setVisibleCount((c) => Math.max(c, i + 1));
+        if (seg.zones?.length && !zonesAppliedRef.current.has(i)) {
+          mergeZones(clientId, seg.zones);
+          zonesAppliedRef.current.add(i);
+        }
+      });
+      if (!eventsSentRef.current.has(i)) {
+        eventsSentRef.current.add(i);
         fetch("/api/onboarding/event", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ clientId, segment: seg }),
         }).catch(console.error);
-        if (i === segments.length - 1) {
-          setTimeout(() => setPlaying(false), 800);
-        }
-      }, seg.start * 1000 * 0.6);
-      timers.current.push(t);
-    });
+      }
+      if (i === segments.length - 1) {
+        setTimeout(() => setPlaying(false), 800);
+      }
+    }
+
+    // Audio-driven reveal loop: fires whichever segments have been reached
+    const tickAudio = setInterval(() => {
+      const ct = audioRef.current?.currentTime;
+      if (typeof ct !== "number" || Number.isNaN(ct)) return;
+      segments.forEach((seg, i) => {
+        if (seg.start <= ct) revealSegment(i);
+      });
+    }, 300);
+    timers.current.push(tickAudio as unknown as ReturnType<typeof setTimeout>);
   }, [segments, playing, clientId, mergeZones]);
+
+  // Scripted AI generation: analyze → draft → reveal questions → auto-start
+  useEffect(() => {
+    if (questions.length === 0) return;
+    const locals: ReturnType<typeof setTimeout>[] = [];
+    locals.push(setTimeout(() => setStage("drafting"), ANALYZE_MS));
+    locals.push(
+      setTimeout(() => {
+        setStage("ready");
+        questions.forEach((_, i) => {
+          const t = setTimeout(() => {
+            setRevealedQuestions((c) => Math.max(c, i + 1));
+          }, i * QUESTION_REVEAL_MS);
+          locals.push(t);
+        });
+      }, ANALYZE_MS + DRAFT_MS)
+    );
+    return () => locals.forEach(clearTimeout);
+  }, [questions]);
+
+  // Auto-fire conversation once all questions are revealed and audio is loaded
+  useEffect(() => {
+    if (stage !== "ready") return;
+    if (revealedQuestions < questions.length) return;
+    if (segments.length === 0) return;
+    const t = setTimeout(() => firePlayback(), CONVERSATION_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [stage, revealedQuestions, questions.length, segments.length, firePlayback]);
 
   useEffect(
     () => () => {
-      timers.current.forEach(clearTimeout);
+      timers.current.forEach((t) => {
+        clearTimeout(t);
+        clearInterval(t as unknown as NodeJS.Timeout);
+      });
     },
     []
   );
@@ -110,8 +179,23 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
   const visibleSegments = segments.slice(0, visibleCount);
   const currentSpeaker = visibleSegments.at(-1)?.speaker ?? null;
 
+  const headerLabel =
+    stage === "analyzing"
+      ? "Analyzing 14 days of health data"
+      : stage === "drafting"
+      ? "Drafting personalized questions"
+      : stage === "ready"
+      ? "Questions ready, starting conversation"
+      : `Onboarding · ${clientName} · Bay 3`;
+
   return (
     <WShell pageName="today">
+      <audio
+        ref={audioRef}
+        src="/demo-onboarding.mp3"
+        preload="auto"
+        style={{ display: "none" }}
+      />
       <div
         style={{
           padding: "12px 28px",
@@ -128,39 +212,15 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: playing ? "var(--signal)" : "var(--fog-3)",
-            boxShadow: playing ? "0 0 12px var(--signal)" : "none",
-            animation: playing ? "breathe 1.4s infinite" : "none",
+            background: stage === "playing" ? "var(--signal)" : "var(--signal-dim)",
+            boxShadow: stage === "playing" ? "0 0 12px var(--signal)" : "0 0 8px var(--signal-dim)",
+            animation: "breathe 1.4s infinite",
           }}
         />
-        <span className="mono upper" style={{ fontSize: 10, color: playing ? "var(--signal)" : "var(--fog-2)" }}>
-          Onboarding · {clientName} · Bay 3
+        <span className="mono upper" style={{ fontSize: 10, color: "var(--signal)" }}>
+          {headerLabel}
         </span>
         <span style={{ flex: 1 }} />
-        <button
-          type="button"
-          onClick={firePlayback}
-          disabled={playing || pending || segments.length === 0}
-          style={{
-            height: 30,
-            padding: "0 14px",
-            borderRadius: 8,
-            background: playing ? "var(--ink-3)" : "var(--signal)",
-            color: playing ? "var(--fog-3)" : "var(--signal-ink)",
-            border: "none",
-            fontSize: 12,
-            fontFamily: "var(--sans)",
-            fontWeight: 600,
-            cursor: playing || pending ? "wait" : "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          {playing && <Loader2 size={12} className="animate-spin" />}
-          {playing ? "listening…" : "▶ Play conversation"}
-        </button>
-        <div style={{ width: 1, height: 16, background: "var(--ink-3)" }} />
         <Link
           href={`/practitioner/session/${clientId}/live`}
           style={{
@@ -173,6 +233,9 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
             background: "var(--signal)",
             border: "none",
             textDecoration: "none",
+            opacity: stage === "playing" && visibleCount >= segments.length && segments.length > 0 ? 1 : 0.55,
+            pointerEvents: stage === "playing" && visibleCount >= segments.length && segments.length > 0 ? "auto" : "none",
+            transition: "opacity 0.3s",
           }}
         >
           Start session →
@@ -219,44 +282,60 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
           }}
         >
           <div>
-            <div className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)" }}>interview script</div>
-            <div className="serif" style={{ fontSize: 20, color: "var(--fog-0)", marginTop: 4, letterSpacing: -0.01 }}>
-              Tailored to <em style={{ color: "var(--signal)" }}>{clientProfile ?? "this athlete"}</em>
+            <div
+              className="mono upper"
+              style={{ fontSize: 9, color: "var(--fog-3)", display: "flex", alignItems: "center", gap: 6 }}
+            >
+              <Sparkles size={10} color="var(--signal)" />
+              tailored interview · live-generated
+            </div>
+            <div className="serif" style={{ fontSize: 20, color: "var(--fog-0)", marginTop: 6, letterSpacing: -0.01 }}>
+              Built from <em style={{ color: "var(--signal)" }}>{clientProfile ?? "this client's health data"}</em>
             </div>
           </div>
 
+          <GenerationStatus stage={stage} />
+
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {questions.slice(0, 6).map((q, i) => (
-              <div
-                key={q.id}
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 10,
-                  background: "var(--ink-2)",
-                  border: "1px solid var(--ink-3)",
-                  position: "relative",
-                }}
-              >
-                <div
+            <AnimatePresence initial={false}>
+              {questions.slice(0, revealedQuestions).map((q, i) => (
+                <motion.div
+                  key={q.id}
+                  initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ type: "spring", stiffness: 240, damping: 22 }}
                   style={{
-                    position: "absolute",
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    width: 2,
-                    background: "var(--signal-dim)",
-                    borderRadius: 999,
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    background: "var(--ink-2)",
+                    border: "1px solid var(--ink-3)",
+                    position: "relative",
                   }}
-                />
-                <div className="mono upper" style={{ fontSize: 8, color: "var(--fog-3)" }}>
-                  {q.activity} · {i + 1}
-                </div>
-                <div style={{ fontSize: 13, color: "var(--fog-0)", marginTop: 4 }}>{q.prompt}</div>
-                <div className="mono" style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 4 }}>
-                  {q.hint}
-                </div>
-              </div>
-            ))}
+                >
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      bottom: 0,
+                      left: 0,
+                      width: 2,
+                      background: "var(--signal-dim)",
+                      borderRadius: 999,
+                    }}
+                  />
+                  <div className="mono upper" style={{ fontSize: 8, color: "var(--fog-3)" }}>
+                    {q.activity} · {i + 1}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--fog-0)", marginTop: 4 }}>{q.prompt}</div>
+                  <div className="mono" style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 4 }}>
+                    {q.hint}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {stage === "ready" && revealedQuestions < questions.length && (
+              <DraftingPlaceholder />
+            )}
           </div>
 
           <div
@@ -310,7 +389,7 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
                 {currentSpeaker === "maya" ? "Maya" : clientName.split(" ")[0]} speaking…
               </div>
             )}
-            {!playing && visibleSegments.length === 0 && (
+            {!playing && visibleSegments.length === 0 && stage === "playing" && (
               <div
                 style={{
                   padding: "10px 12px",
@@ -321,7 +400,7 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
                   color: "var(--fog-3)",
                 }}
               >
-                Press play to start the onboarding conversation.
+                Maya beginning the conversation…
               </div>
             )}
           </div>
@@ -341,7 +420,7 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
             </div>
             <div style={{ fontSize: 12, color: "var(--fog-0)", marginTop: 4 }}>
               {Object.keys(zones).length === 0
-                ? "none yet · press play or tap the body to mark"
+                ? "none yet · will surface as Alina describes tension"
                 : Object.entries(zones)
                   .map(([id, status]) => `${id.replace("_", " ")} (${status})`)
                   .join(", ")}
@@ -350,5 +429,75 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
         </div>
       </div>
     </WShell>
+  );
+}
+
+function GenerationStatus({ stage }: { stage: Stage }) {
+  if (stage === "playing") return null;
+  const label =
+    stage === "analyzing"
+      ? "Reading HRV, sleep, and activity history"
+      : stage === "drafting"
+      ? "Shaping questions around football, running, gym, and desk hours"
+      : "Ready";
+  return (
+    <div
+      style={{
+        padding: "10px 12px",
+        borderRadius: 10,
+        background: "rgba(212,244,90,0.05)",
+        border: "1px solid rgba(212,244,90,0.2)",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+      }}
+    >
+      {stage === "ready" ? (
+        <Sparkles size={14} color="var(--signal)" />
+      ) : (
+        <Loader2 size={14} className="animate-spin" color="var(--signal)" />
+      )}
+      <div style={{ flex: 1 }}>
+        <div className="mono upper" style={{ fontSize: 9, color: "var(--signal)" }}>
+          {stage === "ready" ? "draft complete" : stage === "drafting" ? "drafting" : "analyzing"}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--fog-0)", marginTop: 2 }}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function DraftingPlaceholder() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25 }}
+      style={{
+        padding: "10px 12px",
+        borderRadius: 10,
+        background: "var(--ink-2)",
+        border: "1px dashed var(--ink-3)",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      <Loader2 size={12} className="animate-spin" color="var(--signal)" />
+      <span className="mono" style={{ fontSize: 11, color: "var(--fog-3)" }}>
+        drafting next question
+        <span
+          style={{
+            display: "inline-block",
+            width: 2,
+            height: 10,
+            marginLeft: 4,
+            background: "var(--signal)",
+            animation: "caret-blink 1s infinite",
+            verticalAlign: "middle",
+          }}
+        />
+      </span>
+    </motion.div>
   );
 }

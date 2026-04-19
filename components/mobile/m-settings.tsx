@@ -19,8 +19,8 @@ export function MSettings() {
   const [toast, setToast] = useState<string | null>(null);
   const clientId =
     typeof process !== "undefined"
-      ? process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera"
-      : "marcus-rivera";
+      ? process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "alina-zhou"
+      : "alina-zhou";
 
   const enabledRequired = perms.filter((p, i) => i !== 3);
   const sharingEnabled = enabledRequired.every((p) => p.on);

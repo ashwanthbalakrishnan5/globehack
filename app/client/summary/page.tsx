@@ -4,7 +4,7 @@ import { MSummaryExpanded } from "@/components/mobile/m-summary-expanded";
 
 export default async function Page() {
   const db = insforgeServer();
-  const clientId = process.env.DEMO_CLIENT_ID ?? "marcus-rivera";
+  const clientId = process.env.DEMO_CLIENT_ID ?? "alina-zhou";
 
   const { data: sessions } = await db.database
     .from("sessions")

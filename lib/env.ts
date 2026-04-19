@@ -9,6 +9,6 @@ export const env = {
   insforgeApiBaseUrl: required("INSFORGE_API_BASE_URL"),
   insforgeAnonKey: required("INSFORGE_ANON_KEY"),
   elevenlabsApiKey: required("ELEVENLABS_API_KEY"),
-  demoClientId: process.env.DEMO_CLIENT_ID ?? "marcus-rivera",
+  demoClientId: process.env.DEMO_CLIENT_ID ?? "alina-zhou",
   demoPractitionerId: process.env.DEMO_PRACTITIONER_ID ?? "maya-reyes",
 } as const;

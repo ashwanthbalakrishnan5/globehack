@@ -17,7 +17,7 @@ export function MOnboarding() {
   const [pending, startTransition] = useTransition();
   const [granted, setGranted] = useState(false);
   const clientId =
-    process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
+    process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "alina-zhou";
 
   const handleGrant = () => {
     startTransition(async () => {
@@ -28,7 +28,7 @@ export function MOnboarding() {
           body: JSON.stringify({ clientId }),
         });
         setGranted(true);
-        setTimeout(() => router.push("/client/pair"), 700);
+        setTimeout(() => router.push("/client/checkin"), 700);
       } catch (e) {
         console.error("Health Connect grant failed:", e);
       }

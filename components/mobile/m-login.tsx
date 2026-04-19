@@ -48,7 +48,7 @@ export function MClientLogin() {
   const enter = () => {
     setPending(true);
     setAuthCookie();
-    setTimeout(() => router.push("/client"), 250);
+    setTimeout(() => router.push("/client/onboarding"), 250);
   };
 
   const onSubmit = (e: FormEvent) => {

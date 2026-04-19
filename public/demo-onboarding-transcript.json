@@ -1,15 +1,256 @@
 {
   "segments": [
-    { "start": 0.5,  "end": 4.5,  "speaker": "maya",          "text": "Marcus, before we start the session, I want to walk through your last two weeks.", "note_type": "general", "flagged": false, "zones": [] },
-    { "start": 5.0,  "end": 8.5,  "speaker": "marcus-rivera", "text": "Yeah, sounds good. Let's do it.", "note_type": "general", "flagged": false, "zones": [] },
-    { "start": 9.0,  "end": 14.0, "speaker": "maya",          "text": "How has the football been? Still playing twice a week at the weekend pitch?", "note_type": "general", "flagged": false, "zones": [] },
-    { "start": 14.4, "end": 22.5, "speaker": "marcus-rivera", "text": "Twice a week, yeah. Honestly my left knee has been rough after the Sunday match. It's stiff, and when I twist it catches.", "note_type": "complaint", "flagged": true, "zones": [{ "id": "left_knee", "status": "pain" }] },
-    { "start": 23.0, "end": 28.0, "speaker": "maya",          "text": "Okay, I'm marking the left knee. And jogging, you said you bumped the long run up to ten miles?", "note_type": "general", "flagged": false, "zones": [] },
-    { "start": 28.5, "end": 37.0, "speaker": "marcus-rivera", "text": "Ten miles, yeah. Mostly road. My right calf has been tight for the last three runs, and the lower back lights up around mile seven.", "note_type": "complaint", "flagged": true, "zones": [{ "id": "right_leg", "status": "pain" }, { "id": "lower_back", "status": "pain" }] },
-    { "start": 37.5, "end": 41.5, "speaker": "maya",          "text": "Got it, right calf and the lower back. And the gym?", "note_type": "general", "flagged": false, "zones": [] },
-    { "start": 42.0, "end": 51.0, "speaker": "marcus-rivera", "text": "Push pull legs. Been hitting deadlifts heavy on Tuesdays. My left trap has been tight for like ten days now, same thing as last session.", "note_type": "complaint", "flagged": true, "zones": [{ "id": "left_shoulder", "status": "pain" }] },
-    { "start": 51.5, "end": 56.0, "speaker": "maya",          "text": "That left trap is persistent. I'm carrying it forward into the protocol.", "note_type": "general", "flagged": false, "zones": [] },
-    { "start": 56.5, "end": 63.0, "speaker": "marcus-rivera", "text": "Sleep has been bad too, I've been getting like five hours most nights this week.", "note_type": "complaint", "flagged": true, "zones": [] },
-    { "start": 63.5, "end": 68.0, "speaker": "maya",          "text": "That matches the drop I'm seeing in your signals. Let's get you on the mat.", "note_type": "general", "flagged": false, "zones": [] }
+    {
+      "start": 0.5,
+      "end": 5.2,
+      "speaker": "maya",
+      "text": "Hey Alina, come on in. Good to finally meet you in person.",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 5.7,
+      "end": 10.1,
+      "speaker": "alina-zhou",
+      "text": "Yeah, you too. This place is really nice, I wasn't expecting it to be so calm in here.",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 10.6,
+      "end": 18.2,
+      "speaker": "maya",
+      "text": "We try. Okay so I've been looking through your Health Connect data from the last two weeks. Looks like you're pretty active.",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 18.7,
+      "end": 24.4,
+      "speaker": "alina-zhou",
+      "text": "Oh yeah? I try to stay consistent but the last week or so has been kind of a mess honestly.",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 24.9,
+      "end": 30.0,
+      "speaker": "maya",
+      "text": "We'll get into that. So I saw the football sessions on Saturdays. Is that pickup or more organized?",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 30.5,
+      "end": 40.3,
+      "speaker": "alina-zhou",
+      "text": "Pickup, yeah. Just a group of friends at Dolores Park. It's pretty casual but we do go pretty hard sometimes. Like it's not flag football, there's real contact.",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 40.8,
+      "end": 44.1,
+      "speaker": "maya",
+      "text": "Right, so cutting, stopping fast, some contact. How did you feel after last Saturday?",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 44.6,
+      "end": 58.5,
+      "speaker": "alina-zhou",
+      "text": "Yeah, my left knee was actually pretty stiff the next morning. Like it wasn't sharp or anything, more like a dull ache when I went down the stairs. It kind of went away by afternoon but it came back Monday.",
+      "note_type": "complaint",
+      "flagged": true,
+      "zones": [{ "id": "left_knee", "status": "pain" }]
+    },
+    {
+      "start": 59.1,
+      "end": 63.0,
+      "speaker": "maya",
+      "text": "Okay, good to know. Has that been a pattern or just last weekend?",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 63.5,
+      "end": 71.2,
+      "speaker": "alina-zhou",
+      "text": "It comes and goes. A few weeks ago it was totally fine. I don't know if it's the turf or just how I plant when I cut.",
+      "note_type": "offhand",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 71.7,
+      "end": 75.8,
+      "speaker": "maya",
+      "text": "We'll keep an eye on it. Okay, the running. Tell me about that.",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 76.3,
+      "end": 87.9,
+      "speaker": "alina-zhou",
+      "text": "I run maybe three or four times a week. Usually three to five miles, sometimes I'll push to six on the weekend. Mostly pavement, I run the Embarcadero a lot.",
+      "note_type": "preference",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 88.4,
+      "end": 92.0,
+      "speaker": "maya",
+      "text": "And pace, are you tracking that? Easy effort or pushing it?",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 92.5,
+      "end": 101.3,
+      "speaker": "alina-zhou",
+      "text": "Kind of in between. My easy runs are around nine, nine thirty. On a good day I'll push closer to eight. I'm not really training for anything specific.",
+      "note_type": "preference",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 101.8,
+      "end": 105.9,
+      "speaker": "maya",
+      "text": "Do you notice anything physically on those longer runs? Anything that flares up?",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 106.4,
+      "end": 119.7,
+      "speaker": "alina-zhou",
+      "text": "Yeah, my lower back. It tightens up around mile four or five. Not like stop-running painful, but I definitely notice it. I usually slow down and it settles, but it's pretty consistent.",
+      "note_type": "complaint",
+      "flagged": true,
+      "zones": [{ "id": "lower_back", "status": "pain" }]
+    },
+    {
+      "start": 120.2,
+      "end": 124.1,
+      "speaker": "maya",
+      "text": "Yeah, that's worth paying attention to. What about the gym?",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 124.6,
+      "end": 135.8,
+      "speaker": "alina-zhou",
+      "text": "I lift twice a week. Squats, RDLs, pull-ups, pretty basic. I've been going heavier on squats lately, trying to get my numbers up a little.",
+      "note_type": "goal",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 136.3,
+      "end": 139.5,
+      "speaker": "maya",
+      "text": "Nice. And how do you feel after those heavy days?",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 140.0,
+      "end": 152.4,
+      "speaker": "alina-zhou",
+      "text": "My neck and traps get really tight. Way more than my legs do, which is kind of annoying because I'm doing squats not shrugs. I think it's how I brace or something.",
+      "note_type": "complaint",
+      "flagged": true,
+      "zones": [{ "id": "neck", "status": "pain" }]
+    },
+    {
+      "start": 152.9,
+      "end": 157.8,
+      "speaker": "maya",
+      "text": "That's really common with heavy squats, yeah. We can definitely look at that. What's the work situation like?",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 158.3,
+      "end": 171.6,
+      "speaker": "alina-zhou",
+      "text": "I'm a UX designer so I'm basically on a laptop all day, eight to ten hours. The last week has been brutal, we had a big sprint. My upper back gets tight from sitting, like between the shoulder blades.",
+      "note_type": "complaint",
+      "flagged": true,
+      "zones": [{ "id": "neck", "status": "pain" }]
+    },
+    {
+      "start": 172.1,
+      "end": 175.9,
+      "speaker": "maya",
+      "text": "Mm. And sleep? How has that been with everything going on?",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 176.4,
+      "end": 188.7,
+      "speaker": "alina-zhou",
+      "text": "Not great this past week. I fall asleep okay but I wake up a couple times and then I'm groggy in the morning. I think it's just stress, like my brain won't fully turn off.",
+      "note_type": "complaint",
+      "flagged": true,
+      "zones": []
+    },
+    {
+      "start": 189.2,
+      "end": 193.0,
+      "speaker": "maya",
+      "text": "Yeah, deadline stress does that. I see it a lot.",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 193.5,
+      "end": 208.1,
+      "speaker": "maya",
+      "text": "Okay so here's what I'm hearing: left knee stiffness after football, lower back on longer runs, neck and traps after heavy squat days, upper back from the desk hours, and sleep has been off this week.",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 208.6,
+      "end": 212.0,
+      "speaker": "alina-zhou",
+      "text": "Yeah. When you say it all at once it sounds like a lot.",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    },
+    {
+      "start": 212.5,
+      "end": 220.3,
+      "speaker": "maya",
+      "text": "It's a lot of useful information, that's all. That's exactly what we need. Okay, let's get you on the table.",
+      "note_type": "general",
+      "flagged": false,
+      "zones": []
+    }
   ]
 }

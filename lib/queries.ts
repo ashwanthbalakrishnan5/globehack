@@ -160,14 +160,17 @@ export const getTodaySlots = cache(async (practitionerId: string): Promise<Slot[
   if (error) { console.error("getTodaySlots", error); return []; }
 
   const clients = (data ?? []) as Client[];
-  return clients.map((c, i) => ({
-    time: i === 0 ? "9:00" : "11:30",
-    clientId: c.id,
-    clientName: c.name,
-    clientInitials: c.initials,
-    tag: `returning · ${c.session_count}th`,
-    readiness: c.id === "marcus-rivera" ? 54 : 82,
-    protocol: c.id === "marcus-rivera" ? "Parasympathetic · 40Hz" : "Standard Balance",
-    state: (c.id === "marcus-rivera" ? "now" : "done") as "now" | "done" | "soon",
-  }));
+  return clients.map((c, i) => {
+    const isDemo = c.id === "alina-zhou";
+    return {
+      time: isDemo ? "11:30" : i === 0 ? "9:00" : "2:00",
+      clientId: c.id,
+      clientName: c.name,
+      clientInitials: c.initials,
+      tag: c.session_count === 0 ? "new · first" : `returning · ${c.session_count}th`,
+      readiness: isDemo ? 72 : c.id === "marcus-rivera" ? 54 : 82,
+      protocol: isDemo ? "Baseline · onboarding" : c.id === "marcus-rivera" ? "Parasympathetic · 40Hz" : "Standard Balance",
+      state: (isDemo ? "now" : "done") as "now" | "done" | "soon",
+    };
+  });
 });

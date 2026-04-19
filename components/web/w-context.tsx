@@ -180,6 +180,11 @@ export function WContext({
         setFresh(true);
         router.refresh();
         setTimeout(() => setFresh(false), 2400);
+        // After the data-received animation settles, hand off to the
+        // tailored-questions onboarding view so the demo reads as a single flow.
+        setTimeout(() => {
+          router.push(`/practitioner/session/${clientId}/onboarding`);
+        }, 3600);
       }
     );
     return unsub;

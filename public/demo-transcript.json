@@ -2,98 +2,194 @@
   "segments": [
     {
       "start": 0.0,
-      "end": 4.7,
+      "end": 4.2,
       "speaker": "maya",
-      "text": "Okay Marcus, let's start. How is the left trap feeling today compared to last week?",
+      "text": "Belt feels snug? Good. Let's settle in.",
       "note_type": "general",
       "flagged": false
     },
     {
-      "start": 5.2,
-      "end": 11.6,
-      "speaker": "marcus",
-      "text": "Honestly, it's worse. Like, a lot worse. Sleeping on my left side is basically impossible right now.",
+      "start": 5.1,
+      "end": 10.3,
+      "speaker": "maya",
+      "text": "Take a slow breath in. Hold it a second. Now let it go.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 18.7,
+      "end": 22.4,
+      "speaker": "maya",
+      "text": "Okay. Starting the lower back sweep now. Forty hertz, pretty gentle to start.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 30.1,
+      "end": 36.8,
+      "speaker": "alina",
+      "text": "Oh. Yeah, I feel that. Kind of warm. And there's like a low pulse in the middle.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 37.5,
+      "end": 39.0,
+      "speaker": "maya",
+      "text": "Nice. That's exactly right.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 44.2,
+      "end": 51.7,
+      "speaker": "alina",
+      "text": "It's a little stronger on the left side of the lower back. That's always been my bad spot. Like, years of sitting at a desk.",
       "note_type": "complaint",
       "flagged": true
     },
     {
-      "start": 12.1,
-      "end": 16.7,
+      "start": 52.4,
+      "end": 54.6,
       "speaker": "maya",
-      "text": "I saw that in your HRV data. It's been trending down for about two weeks straight.",
+      "text": "Yeah, I'm seeing that in the tension map. We'll spend a little extra time there.",
       "note_type": "general",
       "flagged": false
     },
     {
-      "start": 17.2,
-      "end": 22.6,
-      "speaker": "marcus",
-      "text": "Yeah, and sleep has been rough too. I've been waking up at like three AM and can't get back down.",
-      "note_type": "complaint",
-      "flagged": true
-    },
-    {
-      "start": 23.1,
-      "end": 27.8,
+      "start": 60.0,
+      "end": 63.5,
       "speaker": "maya",
-      "text": "That tracks. We're going to use the Sun pad on the left side today, forty hertz sweep.",
+      "text": "Breathe into it if you can. Don't force anything.",
       "note_type": "general",
       "flagged": false
     },
     {
-      "start": 28.3,
-      "end": 33.5,
-      "speaker": "marcus",
-      "text": "Oh, that's the one you used last time that actually helped. The one that warmed up kind of slowly.",
+      "start": 80.3,
+      "end": 83.1,
+      "speaker": "maya",
+      "text": "Good. Moving over to the left knee now.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 91.4,
+      "end": 99.2,
+      "speaker": "alina",
+      "text": "Hmm. That one's different. It's less warm, more like pressure. Kind of like when the joint cracks but it doesn't actually crack.",
       "note_type": "preference",
-      "flagged": false
+      "flagged": true
     },
     {
-      "start": 34.0,
-      "end": 35.9,
+      "start": 100.0,
+      "end": 101.8,
       "speaker": "maya",
-      "text": "Exactly. Starting the sweep now.",
+      "text": "Yeah, good. Let it do its thing.",
       "note_type": "general",
       "flagged": false
     },
     {
-      "start": 40.9,
-      "end": 46.2,
-      "speaker": "marcus",
-      "text": "I can already feel it. Way different from last time on the right side. The left responds faster.",
-      "note_type": "preference",
-      "flagged": false
-    },
-    {
-      "start": 46.7,
-      "end": 51.3,
+      "start": 108.5,
+      "end": 111.9,
       "speaker": "maya",
-      "text": "Good. Your heart rate is already dropping. Down eight beats from when we started.",
+      "text": "Your heart rate just dropped about six beats. You're settling in.",
       "note_type": "general",
       "flagged": false
     },
     {
-      "start": 51.8,
-      "end": 58.3,
-      "speaker": "marcus",
-      "text": "Hm. My resting HR has been way up since the half marathon last month. Like, it just hasn't come down.",
+      "start": 113.0,
+      "end": 118.4,
+      "speaker": "alina",
+      "text": "I can feel it. Like everything kind of slowed down. My hands are warmer too.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 119.2,
+      "end": 120.5,
+      "speaker": "maya",
+      "text": "That's the parasympathetic response. Perfect.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 129.0,
+      "end": 132.7,
+      "speaker": "maya",
+      "text": "Okay, going up to the neck. Let me know what you feel.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 140.3,
+      "end": 149.1,
+      "speaker": "alina",
+      "text": "The traps are so tight up there. Like, way tighter than I realized. The left side especially, right at the base of the skull.",
       "note_type": "complaint",
       "flagged": true
     },
     {
-      "start": 58.8,
-      "end": 63.7,
+      "start": 150.0,
+      "end": 153.2,
       "speaker": "maya",
-      "text": "That's a recovery signal we need to watch. The parasympathetic sequence should help.",
+      "text": "I'm staying on that spot. Just breathe, don't try to relax it on purpose.",
       "note_type": "general",
       "flagged": false
     },
     {
-      "start": 64.2,
-      "end": 69.6,
-      "speaker": "marcus",
-      "text": "I just want to get back to where I was in February. That was my best stretch of training in years.",
+      "start": 168.0,
+      "end": 171.4,
+      "speaker": "maya",
+      "text": "One more slow breath. Nice and easy.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 188.6,
+      "end": 197.3,
+      "speaker": "alina",
+      "text": "You know what's weird, I always thought this kind of thing would feel more intense. Like I expected it to be uncomfortable. This is actually kind of nice.",
       "note_type": "offhand",
+      "flagged": true
+    },
+    {
+      "start": 198.2,
+      "end": 199.9,
+      "speaker": "maya",
+      "text": "Most people are surprised by that.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 205.4,
+      "end": 213.0,
+      "speaker": "alina",
+      "text": "I've been waking up a lot at night. Like two, three in the morning and just lying there. I'm hoping this helps with that.",
+      "note_type": "goal",
+      "flagged": true
+    },
+    {
+      "start": 214.1,
+      "end": 218.7,
+      "speaker": "maya",
+      "text": "That's exactly what we're targeting. The neck and the HRV work together on sleep quality.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 230.0,
+      "end": 234.5,
+      "speaker": "maya",
+      "text": "Okay, we're winding down. Coming back slow. Easy breaths.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 240.8,
+      "end": 247.3,
+      "speaker": "maya",
+      "text": "Take your time. Wiggle your fingers when you're ready. No rush.",
+      "note_type": "general",
       "flagged": false
     }
   ]

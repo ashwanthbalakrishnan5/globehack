@@ -15,6 +15,7 @@ import { PoseCapturePanel } from "@/components/features/pose-capture-panel";
 import { PoseComparison } from "@/components/features/pose-comparison";
 import { usePoseStore } from "@/lib/pose-store";
 import { MOVEMENTS } from "@/components/features/pose-capture";
+import { startDevice, stopDevice } from "@/lib/mqtt";
 
 const BodyViewer = dynamic(() => import("@/components/features/body-viewer"), {
   ssr: false,
@@ -44,6 +45,11 @@ interface Props {
   initialNotes: SessionNote[];
 }
 
+type Phase = "ready" | "beltPrep" | "starting" | "live" | "ending";
+
+const BELT_PREP_AUTO_MS = 9000;
+const AUDIO_LEAD_IN_MS = 2800;
+
 function fmt(s: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
@@ -70,7 +76,7 @@ const NoteRow = memo(function NoteRow({ note }: { note: SessionNote }) {
           className="mono upper"
           style={{ fontSize: 9, color: n.speaker === "maya" ? "var(--fog-3)" : "var(--signal)" }}
         >
-          {n.speaker === "maya" ? "MAYA" : "MARCUS"}
+          {n.speaker === "maya" ? "MAYA" : "ALINA"}
         </div>
         <div className="mono tnum" style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 2 }}>
           {fmt(Math.round(n.start_sec ?? 0))}
@@ -113,17 +119,20 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [notes, setNotes] = useState<SessionNote[]>(initialNotes);
   const [useFallback, setUseFallback] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [startingSession, setStartingSession] = useState(false);
+  const [phase, setPhase] = useState<Phase>("ready");
   const [elapsed, setElapsed] = useState(0);
-  const [endingSession, setEndingSession] = useState(false);
+  const [beltCountdown, setBeltCountdown] = useState(Math.ceil(BELT_PREP_AUTO_MS / 1000));
+  const [mqttAck, setMqttAck] = useState<string | null>(null);
   const fallbackSegs = useRef<FallbackSegment[]>([]);
   const receivedCount = useRef(0);
   const fallbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const phaseTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const zones = useBodyState((s) => s.zones[clientId] ?? EMPTY_ZONES);
   const mergeZones = useBodyState((s) => s.mergeZones);
   const captures = usePoseStore((s) => s.captures);
+
+  const isPlaying = phase === "live";
 
   useEffect(() => {
     const unsub = subscribeChannel<{ zones: { id: string; status: BodyPartStatus }[] }>(
@@ -136,7 +145,6 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
     return unsub;
   }, [clientId, mergeZones]);
 
-  // Pre-load fallback transcript
   useEffect(() => {
     fetch("/demo-transcript.json")
       .then((r) => r.json())
@@ -144,7 +152,6 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
       .catch(() => { });
   }, []);
 
-  // Subscribe to realtime notes
   useEffect(() => {
     const unsub = subscribeChannel<SessionNote>(
       `session:${sessionId}:notes`,
@@ -157,14 +164,12 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
     return unsub;
   }, [sessionId]);
 
-  // Elapsed clock
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(id);
   }, [isPlaying]);
 
-  // Fallback replay driven by audio currentTime
   useEffect(() => {
     if (!useFallback || !isPlaying) return;
     const id = setInterval(() => {
@@ -191,34 +196,86 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
 
   const bodyBeforeRef = useRef<Record<string, BodyPartStatus> | null>(null);
 
-  const handleStart = useCallback(async () => {
-    const audio = audioRef.current;
-    if (!audio || isPlaying || startingSession) return;
+  useEffect(
+    () => () => {
+      phaseTimers.current.forEach(clearTimeout);
+    },
+    []
+  );
+
+  const handleStart = useCallback(() => {
+    if (phase !== "ready") return;
     bodyBeforeRef.current = { ...zones };
-    setStartingSession(true);
+    setPhase("beltPrep");
+    setBeltCountdown(Math.ceil(BELT_PREP_AUTO_MS / 1000));
 
-    fallbackTimer.current = setTimeout(() => {
-      if (receivedCount.current < 2) setUseFallback(true);
-    }, 6000);
+    phaseTimers.current.forEach(clearTimeout);
+    phaseTimers.current = [];
 
+    const tick = setInterval(() => {
+      setBeltCountdown((c) => Math.max(0, c - 1));
+    }, 1000);
+    phaseTimers.current.push(tick as unknown as ReturnType<typeof setTimeout>);
+
+    const advance = setTimeout(() => {
+      clearInterval(tick);
+      beginSession();
+    }, BELT_PREP_AUTO_MS);
+    phaseTimers.current.push(advance);
+  }, [phase, zones]);
+
+  const beginSession = useCallback(async () => {
+    phaseTimers.current.forEach(clearTimeout);
+    phaseTimers.current = [];
+    setPhase("starting");
+
+    // Fire MQTT start on the placeholder endpoint (swap in real endpoint via env)
+    try {
+      const ack = await startDevice();
+      setMqttAck(`mqtt · ${ack.action} ack ${ack.macId}`);
+    } catch (e) {
+      console.warn("mqtt start failed", e);
+    }
+
+    // Record session start in backend
     fetch(`/api/session/${sessionId}/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ audioUrl: `${window.location.origin}/demo-session.mp3` }),
     }).catch(console.error);
 
-    try {
-      await audio.play();
-    } catch (e) {
-      console.error(e);
-    }
-    setIsPlaying(true);
-    setStartingSession(false);
-  }, [sessionId, isPlaying, startingSession, zones]);
+    fallbackTimer.current = setTimeout(() => {
+      if (receivedCount.current < 2) setUseFallback(true);
+    }, 6000);
+
+    // Lead-in before audio so the belt-on moment reads clean
+    const audioLeadIn = setTimeout(async () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      try {
+        await audio.play();
+      } catch (e) {
+        console.error(e);
+      }
+      setPhase("live");
+    }, AUDIO_LEAD_IN_MS);
+    phaseTimers.current.push(audioLeadIn);
+  }, [sessionId]);
+
+  const handleSkipBelt = useCallback(() => {
+    phaseTimers.current.forEach(clearTimeout);
+    phaseTimers.current = [];
+    beginSession();
+  }, [beginSession]);
 
   const handleEndReview = useCallback(async () => {
-    if (endingSession) return;
-    setEndingSession(true);
+    if (phase === "ending") return;
+    setPhase("ending");
+    try {
+      await stopDevice();
+    } catch (e) {
+      console.warn("mqtt stop failed", e);
+    }
     const bodyAfter: Record<string, BodyPartStatus> = {};
     for (const [id, status] of Object.entries(zones)) {
       bodyAfter[id] = status === "pain" ? "recovered" : status;
@@ -236,20 +293,31 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
       console.error(e);
     }
     router.push(`/practitioner/session/${clientId}/notes`);
-  }, [sessionId, clientId, router, endingSession, zones]);
+  }, [sessionId, clientId, router, phase, zones]);
 
   const flagged = notes.filter((n) => n.flagged);
+  const showBeltOverlay = phase === "beltPrep" || phase === "starting";
+
+  const statusLabel =
+    phase === "live"
+      ? "Live"
+      : phase === "beltPrep"
+      ? "Belt prep"
+      : phase === "starting"
+      ? "Syncing device"
+      : phase === "ending"
+      ? "Ending"
+      : "Ready";
 
   return (
     <WShell pageName="live">
       <audio
         ref={audioRef}
         src="/demo-session.mp3"
-        onEnded={() => setIsPlaying(false)}
+        onEnded={() => setPhase((p) => (p === "live" ? "live" : p))}
         style={{ display: "none" }}
       />
 
-      {/* header bar */}
       <div
         style={{
           padding: "12px 28px",
@@ -268,22 +336,21 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
             borderRadius: "50%",
             background: isPlaying ? "var(--signal)" : "var(--fog-3)",
             boxShadow: isPlaying ? "0 0 12px var(--signal)" : "none",
-            animation: isPlaying ? "breathe 1.4s infinite" : "none",
+            animation: isPlaying || showBeltOverlay ? "breathe 1.4s infinite" : "none",
           }}
         />
         <span className="mono upper" style={{ fontSize: 10, color: isPlaying ? "var(--signal)" : "var(--fog-3)" }}>
-          {isPlaying ? "Live" : "Ready"} · Marcus Rivera · Bay 3
+          {statusLabel} · Alina Zhou · Bay 3
         </span>
         <span style={{ flex: 1 }} />
         <span className="mono tnum" style={{ fontSize: 14, color: "var(--fog-0)" }}>
           {fmt(elapsed)} <span style={{ color: "var(--fog-3)", fontSize: 11 }}>/ 90:00</span>
         </span>
         <div style={{ width: 1, height: 16, background: "var(--ink-3)" }} />
-        {!isPlaying ? (
+        {phase === "ready" ? (
           <LoadingButton
             onClick={handleStart}
-            pending={startingSession}
-            pendingLabel="Connecting to ElevenLabs…"
+            pending={false}
             style={{
               fontSize: 12,
               color: "var(--signal-ink)",
@@ -296,9 +363,13 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
           >
             ▶ Start session
           </LoadingButton>
+        ) : isPlaying ? (
+          <span className="mono" style={{ fontSize: 10, color: "var(--fog-2)" }}>
+            listening · {mqttAck ?? "audio streaming"}
+          </span>
         ) : (
           <span className="mono" style={{ fontSize: 10, color: "var(--fog-2)" }}>
-            listening
+            {phase === "starting" ? "device syncing" : "awaiting belt"}
           </span>
         )}
         <div style={{ width: 1, height: 16, background: "var(--ink-3)" }} />
@@ -319,15 +390,16 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
         </Link>
         <LoadingButton
           onClick={handleEndReview}
-          pending={endingSession}
+          pending={phase === "ending"}
           pendingLabel="Saving…"
+          disabled={phase === "ready"}
           style={{
             fontSize: 12,
             color: "var(--signal-ink)",
             fontWeight: 600,
             padding: "6px 12px",
             borderRadius: 8,
-            background: endingSession ? "var(--ink-3)" : "var(--signal)",
+            background: phase === "ending" ? "var(--ink-3)" : "var(--signal)",
             border: "none",
           }}
         >
@@ -335,8 +407,7 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
         </LoadingButton>
       </div>
 
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 360px", overflow: "hidden" }}>
-        {/* Transcript column */}
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 360px", overflow: "hidden", position: "relative" }}>
         <div style={{ padding: "20px 28px", overflow: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
           <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)", marginBottom: 4 }}>
             ambient transcript · on-device diarization
@@ -369,7 +440,6 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
           )}
         </div>
 
-        {/* Right rail */}
         <div
           style={{
             borderLeft: "1px solid var(--ink-3)",
@@ -402,7 +472,6 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
               marginBottom: 12,
             }}
           >
-            {/* Show comparison for any movement that has both before + after */}
             {MOVEMENTS.map((m) => {
               const before = captures[`${clientId}:before:${m.id}`];
               const after = captures[`${clientId}:after:${m.id}`];
@@ -499,7 +568,161 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
             )}
           </div>
         </div>
+
+        <AnimatePresence>
+          {showBeltOverlay && (
+            <BeltStrapOverlay
+              phase={phase}
+              countdown={beltCountdown}
+              onSkip={handleSkipBelt}
+              mqttAck={mqttAck}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </WShell>
+  );
+}
+
+function BeltStrapOverlay({
+  phase,
+  countdown,
+  onSkip,
+  mqttAck,
+}: {
+  phase: Phase;
+  countdown: number;
+  onSkip: () => void;
+  mqttAck: string | null;
+}) {
+  const isStarting = phase === "starting";
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 40,
+        background: "rgba(6,8,12,0.94)",
+        backdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          gap: 40,
+          alignItems: "center",
+          maxWidth: 900,
+          padding: "40px 56px",
+        }}
+      >
+        <div
+          style={{
+            width: 280,
+            height: 380,
+            position: "relative",
+            borderRadius: 16,
+            overflow: "hidden",
+            background: "radial-gradient(circle at 50% 50%, rgba(212,244,90,0.12), transparent 70%)",
+            border: "1px solid rgba(212,244,90,0.2)",
+          }}
+        >
+          <BodyViewer markedParts={{ lower_back: "active", abdomen: "active" }} />
+          <motion.div
+            initial={{ opacity: 0.5, scaleY: 1 }}
+            animate={{ opacity: [0.4, 1, 0.4], scaleY: [1, 1.08, 1] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              position: "absolute",
+              left: "12%",
+              right: "12%",
+              top: "52%",
+              height: 22,
+              borderRadius: 8,
+              background: "linear-gradient(90deg, rgba(212,244,90,0.1), rgba(212,244,90,0.5), rgba(212,244,90,0.1))",
+              boxShadow: "0 0 30px rgba(212,244,90,0.5)",
+              border: "1px solid rgba(212,244,90,0.6)",
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 18 }}>
+          <div className="mono upper" style={{ fontSize: 10, color: "var(--signal)", letterSpacing: 0.15 }}>
+            device prep
+          </div>
+          <div className="serif" style={{ fontSize: 34, color: "var(--fog-0)", lineHeight: 1.15, letterSpacing: -0.01 }}>
+            {isStarting ? (
+              <>Syncing with the <em style={{ color: "var(--signal)" }}>Hydrawav3 belt</em></>
+            ) : (
+              <>Strap the <em style={{ color: "var(--signal)" }}>Hydrawav3 belt</em> at the lumbar line</>
+            )}
+          </div>
+          <div style={{ fontSize: 14, color: "var(--fog-2)", lineHeight: 1.5, maxWidth: 420 }}>
+            {isStarting
+              ? "Device paired. Warming the coil array and stabilizing the 40Hz carrier before audio lead-in."
+              : "Centered across L4 to L5. Snug, not tight. The glow indicates placement. Session will begin automatically."}
+          </div>
+
+          <div
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              background: "rgba(212,244,90,0.05)",
+              border: "1px solid rgba(212,244,90,0.2)",
+              maxWidth: 420,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: isStarting ? "var(--signal)" : "var(--signal-dim)",
+                boxShadow: isStarting ? "0 0 12px var(--signal)" : "none",
+                animation: "breathe 1.4s infinite",
+              }}
+            />
+            <div className="mono" style={{ fontSize: 11, color: "var(--fog-2)" }}>
+              {isStarting
+                ? mqttAck ?? "waiting for device ack"
+                : `auto-begin in ${countdown}s`}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              type="button"
+              onClick={onSkip}
+              disabled={isStarting}
+              style={{
+                height: 44,
+                padding: "0 22px",
+                borderRadius: 10,
+                background: "var(--signal)",
+                color: "var(--signal-ink)",
+                fontSize: 14,
+                fontWeight: 600,
+                fontFamily: "var(--sans)",
+                border: "none",
+                cursor: isStarting ? "wait" : "pointer",
+                opacity: isStarting ? 0.6 : 1,
+              }}
+            >
+              Belt secured · begin now
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
