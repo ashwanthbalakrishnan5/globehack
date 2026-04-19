@@ -187,11 +187,14 @@ export function PoseCapture({ movement, label, onCapture }: Props) {
       if (result.landmarks?.length > 0) {
         const landmarks = result.landmarks[0] as Landmark[];
         const du = new DrawingUtils(ctx);
-        du.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
+        // Cast to any to satisfy DrawingUtils's NormalizedLandmark type which requires visibility: number
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const lmsForDraw = landmarks as any[];
+        du.drawConnectors(lmsForDraw, PoseLandmarker.POSE_CONNECTIONS, {
           color: "rgba(122,156,196,0.8)",
           lineWidth: 2,
         });
-        du.drawLandmarks(landmarks, { color: "#7a9cc4", fillColor: "#0d1120", radius: 4 });
+        du.drawLandmarks(lmsForDraw, { color: "#7a9cc4", fillColor: "#0d1120", radius: 4 });
 
         const angles = computeAngles(landmarks, movement.id);
         if (angles) {
