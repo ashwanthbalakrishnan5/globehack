@@ -4,7 +4,7 @@ Behavioral guidelines for Claude when working on this hackathon codebase.
 
 ## 0. Project Context
 
-This is a hackathon build for GlobeHack Season 1 on the Hydrawav3 Recovery Intelligence track. Judging criteria are in `IMPLEMENTATION_PLAN.md`. Three facts drive every decision:
+This is a hackathon build for GlobeHack Season 1 on the Hydrawav3 Recovery Intelligence track. The end-to-end demo flow lives in `flow.md` — read it before touching routing or any demo-critical screen. Three facts drive every decision:
 
 - **Judges never see the codebase.** They see a demo. Code quality matters only as far as it produces a working, visually polished demo on time. Do not optimize for anything else.
 - **Visual impact outweighs technical complexity.** A feature that works and looks great beats a feature that is technically impressive but renders as a dashboard full of text.
@@ -31,19 +31,19 @@ This is the single most important rule in this codebase.
 
 Hackathon success depends on not reinventing anything. Before writing custom code, search for a library that already solves the problem. If one exists with reasonable popularity and a permissive license, use it. Do not write a bespoke implementation because it feels cleaner.
 
-This applies to:
+The libraries this project is already committed to, by area:
 
-- **UI primitives.** Use shadcn/ui, Magic UI, and Aceternity UI. Do not hand-build buttons, cards, sheets, dialogs, or animated backgrounds.
-- **Charting.** Use Recharts. Do not roll SVG charts by hand.
-- **QR generation and scanning.** Use `qrcode.react` and `@yudiel/react-qr-scanner`. Do not write camera access code from scratch.
-- **Animations.** Use Framer Motion. Do not write CSS keyframes for interactive transitions.
-- **State.** Use Zustand. Do not write a context provider stack.
-- **Dates.** Use `date-fns`. Do not write date math.
-- **Icons.** Use `lucide-react`. Do not use custom SVGs unless the design demands it.
-- **Form factor detection.** Use `react-device-detect` on the client side alongside middleware.
-- **Shareable images.** Use Vercel OG or html2canvas.
+- **QR generation and scanning.** `qrcode.react` on the practitioner tablet, `@yudiel/react-qr-scanner` on the client phone. Do not write camera access or QR rendering code from scratch.
+- **Animations.** Framer Motion. Do not write CSS keyframes for interactive transitions.
+- **State.** Zustand with `persist` middleware. Do not write a context provider stack.
+- **Dates.** `date-fns`. Do not write date math.
+- **Icons.** `lucide-react`. Do not hand-roll SVG icons unless the design demands a custom mark.
+- **Form factor detection.** `react-device-detect` on the client side; `middleware.ts` is authoritative on the server side.
+- **Shareable images.** `html2canvas` for in-app renders; `next/og` (`ImageResponse`) for the Vercel OG share page.
 
-If a library is missing or unclear, consult Context7 via MCP for current documentation before writing the integration. Do not rely on memory for library APIs.
+**Styling reality check:** this codebase does **not** use shadcn/ui, Magic UI, Aceternity UI, Radix, Tailwind, or Recharts. The design system is hand-built inline styles plus CSS variables defined in `app/tokens.css`, with reusable atoms in `components/primitives.tsx`. Match that pattern. Do not introduce a component library mid-build; the visual language is already set, and importing shadcn would clash with the bespoke look that makes the demo distinctive.
+
+If a library's API is uncertain, consult Context7 via MCP for current documentation before writing the integration. Do not rely on memory for library APIs.
 
 Writing glue code between libraries is fine and expected. Writing a library from scratch when one exists is a bug.
 
@@ -61,7 +61,7 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 
 **KISS.** Keep every solution as simple as the problem allows. If the feature is a rule-based lookup, write a rule-based lookup, not a pluggable strategy pattern.
 
-**YAGNI.** Do not build what the next feature might need. Build what this feature needs. The implementation plan is the spec. Nothing beyond it ships.
+**YAGNI.** Do not build what the next feature might need. Build what this feature needs. `flow.md` is the spec. Nothing beyond it ships.
 
 **DRY, with judgment.** Repeat yourself twice before abstracting. Premature deduplication is harder to undo than duplication. Two similar components are fine; a generic one with seven props is not.
 
@@ -117,7 +117,7 @@ Context7 provides current library documentation. Use it whenever a library API i
 
 Do not guess at API shapes based on training data. Libraries change. If you are about to write an integration and have any uncertainty about the current API, resolve the library ID through Context7 and query the docs first.
 
-This is especially important for Next.js 15, shadcn/ui, Magic UI, Aceternity UI, Insforge, and ElevenLabs.
+This is especially important for Next.js 15 App Router, Insforge, ElevenLabs Scribe, Framer Motion, and `@yudiel/react-qr-scanner`.
 
 ## 6. Goal-Driven Execution
 
@@ -125,9 +125,9 @@ Define success criteria. Loop until verified.
 
 Transform tasks into verifiable goals:
 
-- "Add the recommendation card" becomes "Given mock client B, the card renders with the correct protocol parameters and three reasoning lines within one second of mount."
-- "Make the check-in work" becomes "Scanning the QR on the client phone causes the practitioner dashboard to navigate to the session view within two seconds."
-- "Fix the transcript" becomes "The demo audio plays end-to-end and produces at least eight speaker-labeled segments in the UI."
+- "Add the recommendation card" becomes "For Alina, the card renders with the correct protocol parameters and three reasoning lines within one second of mount."
+- "Make the check-in work" becomes "Scanning Maya's QR on Alina's phone navigates the practitioner dashboard to the session view within two seconds."
+- "Fix the transcript" becomes "`demo-session.mp3` plays end-to-end and produces at least eight speaker-labeled segments in the UI."
 
 For multi-step tasks, state a brief plan with verification steps. Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
@@ -142,7 +142,7 @@ This is a hackathon rule, not a general engineering rule. It overrides some of t
 
 ## 8. What Not To Build
 
-The `IMPLEMENTATION_PLAN.md` has an explicit out-of-scope section. Respect it. If an idea not in the plan seems compelling mid-build, surface it as a question instead of silently building it. Scope creep is the primary way hackathon projects fail.
+`flow.md` has an explicit "Explicitly out of scope" section. Respect it. If an idea not in `flow.md` seems compelling mid-build, surface it as a question instead of silently building it. Scope creep is the primary way hackathon projects fail.
 
 ## 9. Style Preferences
 
@@ -155,3 +155,15 @@ The `IMPLEMENTATION_PLAN.md` has an explicit out-of-scope section. Respect it. I
 Ask. The cost of a clarifying question is seconds. The cost of building the wrong thing is hours.
 
 **These guidelines are working if:** the diff is small, the demo works, the screens look designed, the MCPs are doing the heavy lifting, and you asked at least one clarifying question before the build started.
+
+## 11. Demo Invariants
+
+`flow.md` is the source of truth for the end-to-end client and practitioner flow. When code and `flow.md` disagree, the flow doc wins and the code gets corrected. Read `flow.md` before changing any routing, check-in, onboarding, or session screen.
+
+Hold these invariants any time you touch the demo surface:
+
+- **The client phone never displays a QR.** The QR lives only on the practitioner's `/practitioner` dashboard (`w-checkin-qr.tsx`). The client scans it; the client never shows one back. The post-scan screen is a minimal "Paired with Maya" confirmation.
+- **Alina always starts new.** `/client/login` wipes `tide-session`, `tide-body-state`, and `tide-pose` on mount and on "Enter Tide". Do not add persistent onboarding flags, welcome-back banners, or "returning client" branches to the client flow. No matter how many rehearsals happen, the next phone open is a fresh first-time experience.
+- **Two-party consent banner is always visible during audio capture.** Any practitioner screen that records audio (`w-onboarding.tsx`, `w-live-session-live.tsx`) must carry the compact amber pill: `⚠ two-party consent · audio recorded with client ack`. Do not hide or gate it behind a setting.
+- **The demo runs on the live Vercel URL from two physical devices**, not same-origin tabs on one machine. Cross-device state must travel over Insforge realtime channels. Zustand + `localStorage` is only a single-device convenience; do not design new features that assume shared `localStorage` across devices.
+- **Client onboarding order is fixed:** `/client/login` → `/client/onboarding` (Health Connect) → `/client/pair` → `/client/voice-print` → `/client` (home) → `/client/checkin`. Do not shortcut this chain.

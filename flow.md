@@ -14,6 +14,7 @@ The demo primary is **Alina Zhou**, a first-time client pairing with **Maya Reye
 ## 0. Before the demo starts
 
 Both surfaces are open on the **live hosted URL** (same origin, two devices):
+
 - Phone on `/client/login` (fresh — Alina is demoed as a first-time client every run)
 - Laptop on `/practitioner` (logged in as Maya)
 
@@ -29,7 +30,7 @@ Three screens the client walks through before the first visit, in order:
 
 1. **`/client/onboarding`** — Health Connect grant. Permission toggles (HR, sleep, workouts, body). Tapping "Grant" POSTs `/api/onboarding/health-connect`, pushes the 14-day signal window into Insforge, then routes to `/client/pair`.
 2. **`/client/pair`** — Pair with practitioner card (Maya Reyes, DPT). Tapping "Pair with Maya" routes to `/client/voice-print`.
-3. **`/client/voice-print`** — Voice print capture screen. *Visual only.* Tapping through lands the client on `/client` (home).
+3. **`/client/voice-print`** — Voice print capture screen. _Visual only._ Tapping through lands the client on `/client` (home).
 
 From home the client taps the "Check in with Maya" CTA to open the scanner at `/client/checkin`.
 
@@ -69,7 +70,7 @@ Clicking any schedule row opens `WClientCheckinModal` — a manual pairing path 
 - Camera opens via `@yudiel/react-qr-scanner`. Scanning Maya's QR extracts the token and POSTs `/api/checkin` with `{ token, clientId }`.
 - The API route decodes the token, inserts a `sessions` row (protocol defaults to the cooling + 40 Hz preset), then publishes `checkin:{practitionerId}` · `checked_in`.
 - Phone flips to `MCheckIn` — a minimal "Paired with Maya" confirmation (TideMark pulse, session + bay line, signals-synced vitals card). No QR is shown on the phone; the client has already scanned the desk QR and does not need to present one back. The screen auto-routes to `/client/onboarding/session` 1.6 s later.
-- 1.2 s after the scan the phone *also* fires `/api/onboarding/health-connect` so the practitioner side sees a separate "Signals received" animation beat after the pairing beat.
+- 1.2 s after the scan the phone _also_ fires `/api/onboarding/health-connect` so the practitioner side sees a separate "Signals received" animation beat after the pairing beat.
 
 ### Practitioner side
 
@@ -129,13 +130,14 @@ Practitioner taps **End & review** in the live header.
 
 - `stopDevice()` MQTT ack.
 - POST `/api/session/[id]/summary` with the captured before/after body zone maps. The route composes a `SummaryCard` from flagged notes, duration, and HRV-at-session, writes it onto the `sessions` row, and publishes `summary:{clientId}` · `summary_ready`.
-- The practitioner is routed to `/practitioner/session/[id]/notes` (`w-notes-review.tsx`) for a staged review of three extracted cards with Keep/Drop toggles and a "card Marcus will see" preview. *Note: this screen renders a fixed three-card sample, not the live extracted notes — it's there to demo the review ergonomic.*
+- The practitioner is routed to `/practitioner/session/[id]/notes` (`w-notes-review.tsx`) for a staged review of three extracted cards with Keep/Drop toggles and a "card Marcus will see" preview. _Note: this screen renders a fixed three-card sample, not the live extracted notes — it's there to demo the review ergonomic._
 
 ### Client receives the card
 
 `components/mobile/summary-listener.tsx` is mounted in every client layout. It subscribes to `summary:{clientId}` · `summary_ready` and, on payload, pops `MSummarySheet` as a full-screen sheet on whatever client screen is open.
 
 Tapping through sheet → `/client/summary` (`m-summary-expanded.tsx`) — the full card with:
+
 - The pulled quote ("you said …")
 - Before/after body viewer pair (alternating 2.2 s)
 - Measured HR drop, HRV shift, vibration Hz, HRV at session
@@ -192,7 +194,7 @@ Each row exposes **Draft message** → `WDraftMessageDrawer` with a pre-written 
 - **Alina's Health Connect payload** is a hand-tuned 14-day body rather than a live Android Health Connect bridge (`app/api/onboarding/health-connect/route.ts`).
 - **Today dashboard badges** (projected revenue $1,120, 68% rebook rate, avg client HRV wave, first two schedule slots) are visual anchors, not computed.
 - **Resonance map zones + asymmetry bars** on `/practitioner/session/[id]/resonance` are a curated default zone set, not derived from this session.
-- **Notes review page** renders three hand-authored extracted cards with Keep/Drop. The "Save & fire summary card" button triggers navigation state; the *real* summary fires on End & review from the live screen.
+- **Notes review page** renders three hand-authored extracted cards with Keep/Drop. The "Save & fire summary card" button triggers navigation state; the _real_ summary fires on End & review from the live screen.
 - **Coherence ring and voice print capture** are visual-only animations.
 - **Next-session dashboard stats and some copy** on the waiting-state dashboard are stage-dressing.
 
