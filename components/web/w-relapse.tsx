@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { HRVSpark, Tag } from "@/components/primitives";
 import { StatBlock, WHeader, WShell } from "./shell";
 import { WDraftMessageDrawer } from "./w-draft-message-drawer";
+import { subscribeChannel } from "@/lib/realtime";
 import type { Flag } from "@/lib/types";
 
 const DEMO_FLAGS: Flag[] = [
@@ -35,9 +36,37 @@ const badgeColor = (s: string) =>
 export function WRelapseFlag({ liveFlags }: { liveFlags?: Flag[] }) {
   const [activeFlag, setActiveFlag] = useState<Flag | null>(null);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [privacyHidden, setPrivacyHidden] = useState<Set<string>>(new Set());
 
-  const flags = (liveFlags && liveFlags.length > 0 ? liveFlags : DEMO_FLAGS).filter(
-    (f) => !dismissed.has(f.id)
+  const baseFlags = useMemo(
+    () => (liveFlags && liveFlags.length > 0 ? liveFlags : DEMO_FLAGS),
+    [liveFlags]
+  );
+  const subscribedIds = useMemo(
+    () => Array.from(new Set(baseFlags.map((f) => f.clientId))),
+    [baseFlags]
+  );
+
+  useEffect(() => {
+    const unsubs = subscribedIds.map((cid) =>
+      subscribeChannel<{ clientId: string; sharingEnabled: boolean }>(
+        `privacy:${cid}`,
+        "sharing_changed",
+        ({ clientId, sharingEnabled }) => {
+          setPrivacyHidden((prev) => {
+            const next = new Set(prev);
+            if (sharingEnabled) next.delete(clientId);
+            else next.add(clientId);
+            return next;
+          });
+        }
+      )
+    );
+    return () => unsubs.forEach((u) => u());
+  }, [subscribedIds]);
+
+  const flags = baseFlags.filter(
+    (f) => !dismissed.has(f.id) && !privacyHidden.has(f.clientId)
   );
 
   return (
@@ -55,6 +84,29 @@ export function WRelapseFlag({ liveFlags }: { liveFlags?: Flag[] }) {
         }
       />
       <div style={{ flex: 1, padding: "24px 28px", overflow: "auto" }}>
+        {privacyHidden.size > 0 && (
+          <div
+            style={{
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: "rgba(255,106,61,0.08)",
+              border: "1px solid rgba(255,106,61,0.3)",
+              marginBottom: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <span className="mono upper" style={{ fontSize: 10, color: "var(--flare)" }}>
+              sharing paused
+            </span>
+            <span style={{ fontSize: 12, color: "var(--fog-2)" }}>
+              {privacyHidden.size === 1
+                ? "1 client has paused signal sharing; their flags are hidden."
+                : `${privacyHidden.size} clients have paused signal sharing; their flags are hidden.`}
+            </span>
+          </div>
+        )}
         <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)", marginBottom: 14 }}>
           flags this week · sorted by severity
         </div>
