@@ -7,6 +7,11 @@ import { BioGrid, LoadingButton, Tag, TideMark } from "@/components/primitives";
 import { useSession } from "@/lib/store";
 import { WHeader, WShell } from "./shell";
 
+const COMIC_PANELS = [
+  "/comic1.png", "/comic2.png", "/comic3.png",
+  "/comic4.png", "/comic5.png", "/comic6.png",
+];
+
 type NoteState = "keep" | "drop";
 
 export function WNotesReview() {
@@ -47,6 +52,8 @@ export function WNotesReview() {
   const setState = (i: number, s: NoteState) =>
     setStates((prev) => prev.map((v, idx) => (idx === i ? s : v)));
   const discardAll = () => setStates(notes.map(() => "drop"));
+  const [showComic, setShowComic] = useState(false);
+  const [comicPanel, setComicPanel] = useState(0);
 
   const onFire = () => {
     startFire(async () => {
@@ -62,6 +69,26 @@ export function WNotesReview() {
         sub="session 07 · 38m · just ended"
         right={
           <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => { setComicPanel(0); setShowComic(true); }}
+              type="button"
+              style={{
+                height: 38,
+                padding: "0 16px",
+                borderRadius: 10,
+                background: "linear-gradient(135deg, rgba(212,244,90,0.1), rgba(192,123,255,0.06))",
+                color: "var(--signal)",
+                border: "1px solid rgba(212,244,90,0.3)",
+                fontSize: 12,
+                fontFamily: "var(--sans)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span>📖</span> Preview session comic
+            </button>
             <button
               onClick={discardAll}
               type="button"
@@ -108,113 +135,113 @@ export function WNotesReview() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <AnimatePresence initial={false}>
-            {notes.map((n, i) => (
-              <motion.div
-                key={i}
-                layout
-                initial={{ opacity: 1 }}
-                animate={{ opacity: states[i] === "drop" ? 0.38 : 1 }}
-                transition={{ duration: 0.25 }}
-                style={{
-                  padding: 18,
-                  borderRadius: 14,
-                  background: "var(--ink-2)",
-                  border: `1px solid ${states[i] === "drop" ? "var(--ink-3)" : "var(--ink-3)"}`,
-                  borderLeft: states[i] === "drop" ? "2px solid var(--ink-4)" : "2px solid var(--signal)",
-                }}
-              >
-                <div
+              {notes.map((n, i) => (
+                <motion.div
+                  key={i}
+                  layout
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: states[i] === "drop" ? 0.38 : 1 }}
+                  transition={{ duration: 0.25 }}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 12,
+                    padding: 18,
+                    borderRadius: 14,
+                    background: "var(--ink-2)",
+                    border: `1px solid ${states[i] === "drop" ? "var(--ink-3)" : "var(--ink-3)"}`,
+                    borderLeft: states[i] === "drop" ? "2px solid var(--ink-4)" : "2px solid var(--signal)",
                   }}
                 >
-                  <Tag color="var(--signal)">{n.type}</Tag>
-                  <span className="mono" style={{ fontSize: 10, color: "var(--fog-3)" }}>{n.ref}</span>
-                </div>
-                <div
-                  className="serif"
-                  style={{ fontSize: 18, fontStyle: "italic", color: "var(--fog-0)", lineHeight: 1.3 }}
-                >
-                  &ldquo;{n.quote}&rdquo;
-                </div>
-                <div
-                  style={{
-                    marginTop: 14,
-                    padding: 12,
-                    borderRadius: 10,
-                    background: "var(--ink-1)",
-                    border: "1px solid var(--ink-3)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                  }}
-                >
-                  {n.fields.map((f, j) => (
-                    <div key={j} style={{ display: "flex", gap: 14 }}>
-                      <span
-                        className="mono upper"
-                        style={{ fontSize: 9, color: "var(--fog-3)", width: 78 }}
-                      >
-                        {f.k}
-                      </span>
-                      <span style={{ fontSize: 12, color: "var(--fog-0)", flex: 1 }}>{f.v}</span>
-                      <span className="mono" style={{ fontSize: 10, color: "var(--fog-3)" }}>edit</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
-                  <button
-                    type="button"
-                    onClick={() => setState(i, "keep")}
-                    aria-pressed={states[i] === "keep"}
+                  <div
                     style={{
-                      height: 28,
-                      padding: "0 12px",
-                      borderRadius: 6,
-                      background: states[i] === "keep" ? "var(--signal)" : "var(--ink-3)",
-                      color: states[i] === "keep" ? "var(--signal-ink)" : "var(--fog-0)",
-                      border: "none",
-                      fontSize: 11,
-                      fontFamily: "var(--sans)",
-                      cursor: "pointer",
-                      fontWeight: states[i] === "keep" ? 600 : 400,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 12,
                     }}
                   >
-                    Keep
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setState(i, "drop")}
-                    aria-pressed={states[i] === "drop"}
+                    <Tag color="var(--signal)">{n.type}</Tag>
+                    <span className="mono" style={{ fontSize: 10, color: "var(--fog-3)" }}>{n.ref}</span>
+                  </div>
+                  <div
+                    className="serif"
+                    style={{ fontSize: 18, fontStyle: "italic", color: "var(--fog-0)", lineHeight: 1.3 }}
+                  >
+                    &ldquo;{n.quote}&rdquo;
+                  </div>
+                  <div
                     style={{
-                      height: 28,
-                      padding: "0 12px",
-                      borderRadius: 6,
-                      background: states[i] === "drop" ? "var(--ink-3)" : "transparent",
-                      color: states[i] === "drop" ? "var(--fog-0)" : "var(--fog-3)",
+                      marginTop: 14,
+                      padding: 12,
+                      borderRadius: 10,
+                      background: "var(--ink-1)",
                       border: "1px solid var(--ink-3)",
-                      fontSize: 11,
-                      fontFamily: "var(--sans)",
-                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
                     }}
                   >
-                    Drop
-                  </button>
-                  <span style={{ flex: 1 }} />
-                  <span
-                    className="mono"
-                    style={{ fontSize: 9, color: "var(--fog-3)", alignSelf: "center" }}
-                  >
-                    {states[i] === "drop"
-                      ? "will not be saved"
-                      : "→ client profile · tagged “session 07”"}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
+                    {n.fields.map((f, j) => (
+                      <div key={j} style={{ display: "flex", gap: 14 }}>
+                        <span
+                          className="mono upper"
+                          style={{ fontSize: 9, color: "var(--fog-3)", width: 78 }}
+                        >
+                          {f.k}
+                        </span>
+                        <span style={{ fontSize: 12, color: "var(--fog-0)", flex: 1 }}>{f.v}</span>
+                        <span className="mono" style={{ fontSize: 10, color: "var(--fog-3)" }}>edit</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+                    <button
+                      type="button"
+                      onClick={() => setState(i, "keep")}
+                      aria-pressed={states[i] === "keep"}
+                      style={{
+                        height: 28,
+                        padding: "0 12px",
+                        borderRadius: 6,
+                        background: states[i] === "keep" ? "var(--signal)" : "var(--ink-3)",
+                        color: states[i] === "keep" ? "var(--signal-ink)" : "var(--fog-0)",
+                        border: "none",
+                        fontSize: 11,
+                        fontFamily: "var(--sans)",
+                        cursor: "pointer",
+                        fontWeight: states[i] === "keep" ? 600 : 400,
+                      }}
+                    >
+                      Keep
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setState(i, "drop")}
+                      aria-pressed={states[i] === "drop"}
+                      style={{
+                        height: 28,
+                        padding: "0 12px",
+                        borderRadius: 6,
+                        background: states[i] === "drop" ? "var(--ink-3)" : "transparent",
+                        color: states[i] === "drop" ? "var(--fog-0)" : "var(--fog-3)",
+                        border: "1px solid var(--ink-3)",
+                        fontSize: 11,
+                        fontFamily: "var(--sans)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Drop
+                    </button>
+                    <span style={{ flex: 1 }} />
+                    <span
+                      className="mono"
+                      style={{ fontSize: 9, color: "var(--fog-3)", alignSelf: "center" }}
+                    >
+                      {states[i] === "drop"
+                        ? "will not be saved"
+                        : "→ client profile · tagged “session 07”"}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
             </AnimatePresence>
           </div>
         </div>
@@ -332,6 +359,126 @@ export function WNotesReview() {
           </div>
         </div>
       </div>
+
+      {/* Comic reader overlay */}
+      <AnimatePresence>
+        {showComic && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 80,
+              background: "rgba(4,6,8,0.92)", backdropFilter: "blur(12px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+            onClick={() => setShowComic(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.94, y: 16 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.94, y: 16 }}
+              transition={{ type: "spring", stiffness: 300, damping: 28 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "min(860px, 92vw)",
+                background: "#0a0208",
+                borderRadius: 20,
+                border: "1px solid rgba(212,244,90,0.15)",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {/* Comic header */}
+              <div style={{
+                padding: "16px 20px",
+                display: "flex", alignItems: "center", gap: 12,
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}>
+                <span className="mono upper" style={{ fontSize: 9, color: "var(--signal)" }}>
+                  session comic · {comicPanel + 1} of {COMIC_PANELS.length}
+                </span>
+                <div style={{ display: "flex", gap: 5, flex: 1, justifyContent: "center" }}>
+                  {COMIC_PANELS.map((_, i) => (
+                    <motion.div
+                      key={i}
+                      onClick={() => setComicPanel(i)}
+                      animate={{
+                        width: i === comicPanel ? 24 : 8,
+                        background: i === comicPanel ? "#d4f45a" : i < comicPanel ? "rgba(212,244,90,0.35)" : "rgba(255,255,255,0.12)",
+                      }}
+                      style={{ height: 6, borderRadius: 999, cursor: "pointer" }}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => setShowComic(false)}
+                  style={{
+                    width: 30, height: 30, borderRadius: 8,
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "rgba(255,255,255,0.5)",
+                    fontSize: 16, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >×</button>
+              </div>
+
+              {/* Panel image */}
+              <div style={{ position: "relative", background: "#0a0208" }}>
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={comicPanel}
+                    src={COMIC_PANELS[comicPanel]}
+                    alt={`Panel ${comicPanel + 1}`}
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -30 }}
+                    transition={{ type: "spring", stiffness: 340, damping: 32 }}
+                    style={{ width: "100%", maxHeight: "60vh", objectFit: "contain", display: "block" }}
+                  />
+                </AnimatePresence>
+              </div>
+
+              {/* Nav */}
+              <div style={{
+                padding: "14px 20px",
+                display: "flex", gap: 10,
+                borderTop: "1px solid rgba(255,255,255,0.06)",
+              }}>
+                <button
+                  onClick={() => setComicPanel((p) => Math.max(0, p - 1))}
+                  disabled={comicPanel === 0}
+                  style={{
+                    height: 40, width: 40, borderRadius: 10,
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: comicPanel === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)",
+                    fontSize: 16, cursor: comicPanel === 0 ? "not-allowed" : "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >←</button>
+                <button
+                  onClick={() => {
+                    if (comicPanel === COMIC_PANELS.length - 1) setShowComic(false);
+                    else setComicPanel((p) => p + 1);
+                  }}
+                  style={{
+                    flex: 1, height: 40, borderRadius: 10,
+                    background: comicPanel === COMIC_PANELS.length - 1 ? "var(--signal)" : "rgba(212,244,90,0.1)",
+                    border: "1px solid rgba(212,244,90,0.3)",
+                    color: comicPanel === COMIC_PANELS.length - 1 ? "var(--signal-ink)" : "var(--signal)",
+                    fontSize: 13, fontWeight: 600, fontFamily: "var(--sans)", cursor: "pointer",
+                  }}
+                >
+                  {comicPanel === COMIC_PANELS.length - 1 ? "Done" : "Next panel →"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </WShell>
   );
 }
