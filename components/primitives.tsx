@@ -320,7 +320,13 @@ export function HRVSpark({
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
+      style={{ display: "block", maxWidth: "100%" }}
+    >
       {threshold !== undefined &&
         (() => {
           const ty = height - ((threshold - min) / range) * (height - 4) - 2;

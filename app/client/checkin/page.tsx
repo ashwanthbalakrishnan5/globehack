@@ -1,51 +1,64 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { MCheckIn } from "@/components/mobile/m-checkin";
+import { MCheckinScan } from "@/components/mobile/m-checkin-scan";
 import { SyncOverlay } from "@/components/sync-overlay";
 import { useSession } from "@/lib/store";
 
 function CheckinHandler() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get("token");
+  const initialToken = searchParams.get("token");
+  const [token, setToken] = useState<string | null>(initialToken);
   const phase = useSession((s) => s.phase);
   const summaryReady = useSession((s) => s.summaryReady);
   const startCheckIn = useSession((s) => s.startCheckIn);
   const [posting, setPosting] = useState(false);
   const [synced, setSynced] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
   const practitionerName =
     process.env.NEXT_PUBLIC_DEMO_PRACTITIONER_NAME ?? "Maya";
 
-  useEffect(() => {
-    if (token && phase === "idle") {
+  const runCheckIn = useCallback(
+    async (checkinToken?: string) => {
       const clientId = process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
       setPosting(true);
-      fetch("/api/checkin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, clientId }),
-      })
-        .then((r) => r.json())
-        .then(({ sessionId }) => {
-          if (sessionId) {
-            startCheckIn(clientId, sessionId, "qr");
-            setSynced(true);
-          }
-        })
-        .catch(console.error)
-        .finally(() => setPosting(false));
-    } else if (!token && phase === "idle") {
-      startCheckIn(
-        process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera",
-        `session-${Date.now()}`,
-        "simulated"
-      );
+      setFailed(null);
+      try {
+        const res = await fetch("/api/checkin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: checkinToken, clientId }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setFailed(data.error ?? "Could not check in");
+          setToken(null);
+          return;
+        }
+        if (data.sessionId) {
+          startCheckIn(clientId, data.sessionId, checkinToken ? "qr" : "simulated");
+          setSynced(true);
+        }
+      } catch (e) {
+        setFailed((e as Error).message ?? "Network error");
+        setToken(null);
+      } finally {
+        setPosting(false);
+      }
+    },
+    [startCheckIn]
+  );
+
+  useEffect(() => {
+    if (token && phase === "idle" && !posting && !synced && !failed) {
+      runCheckIn(token);
     }
-  }, [token, phase, startCheckIn]);
+  }, [token, phase, posting, synced, failed, runCheckIn]);
 
   useEffect(() => {
     if (!synced) return;
@@ -57,6 +70,17 @@ function CheckinHandler() {
     if (summaryReady) router.push("/client/summary");
     else if (phase === "live" || phase === "review") router.push("/client/session");
   }, [summaryReady, phase, router]);
+
+  const showScanner = !token && !posting && !synced && phase === "idle";
+
+  if (showScanner) {
+    return (
+      <MCheckinScan
+        onToken={(t) => setToken(t)}
+        simulate={process.env.NODE_ENV === "development" ? () => runCheckIn() : undefined}
+      />
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -111,7 +135,13 @@ function CheckinHandler() {
           }}
         >
           {posting && <Loader2 size={14} className="animate-spin" />}
-          {posting ? "Syncing with Maya..." : synced ? "Paired" : "Session started →"}
+          {failed
+            ? failed
+            : posting
+            ? `Syncing with ${practitionerName}…`
+            : synced
+            ? "Paired"
+            : "Session started →"}
         </div>
       </div>
       <SyncOverlay show={synced} name={practitionerName} />

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { LoadingButton, Meter, Tag, VoiceWave, WavePath } from "@/components/primitives";
 import { WShell } from "./shell";
 import { subscribeChannel } from "@/lib/realtime";
-import { useBodyState } from "@/lib/body-state";
+import { useBodyState, EMPTY_ZONES } from "@/lib/body-state";
 import type { SessionNote } from "@/lib/types";
 import type { BodyPartStatus } from "@/components/features/body-viewer";
 import { PoseCapturePanel } from "@/components/features/pose-capture-panel";
@@ -121,7 +121,7 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
   const receivedCount = useRef(0);
   const fallbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const zones = useBodyState((s) => s.zones[clientId] ?? {});
+  const zones = useBodyState((s) => s.zones[clientId] ?? EMPTY_ZONES);
   const mergeZones = useBodyState((s) => s.mergeZones);
   const captures = usePoseStore((s) => s.captures);
 

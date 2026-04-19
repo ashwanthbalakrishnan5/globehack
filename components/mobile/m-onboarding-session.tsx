@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { MScreen } from "./shell";
 import { subscribeChannel } from "@/lib/realtime";
-import { useBodyState } from "@/lib/body-state";
+import { useBodyState, EMPTY_ZONES } from "@/lib/body-state";
 import { useSession } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import type { BodyPartStatus } from "@/components/features/body-viewer";
@@ -36,7 +36,7 @@ export function MOnboardingSession() {
   const router = useRouter();
   const clientId = useSession((s) => s.activeClientId) ?? process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
   const phase = useSession((s) => s.phase);
-  const zones = useBodyState((s) => s.zones[clientId] ?? {});
+  const zones = useBodyState((s) => s.zones[clientId] ?? EMPTY_ZONES);
   const mergeZones = useBodyState((s) => s.mergeZones);
   const [segments, setSegments] = useState<Segment[]>([]);
 

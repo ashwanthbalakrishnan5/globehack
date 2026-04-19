@@ -23,7 +23,7 @@ export function BottomTabs() {
         backdropFilter: "blur(16px) saturate(160%)",
         WebkitBackdropFilter: "blur(16px) saturate(160%)",
         borderTop: "1px solid var(--ink-3)",
-        padding: "10px 14px 26px",
+        padding: "10px 14px calc(14px + env(safe-area-inset-bottom))",
         display: "flex",
         gap: 4,
         zIndex: 20,

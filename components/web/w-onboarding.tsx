@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { PainReporter } from "@/components/features/pain-reporter";
-import { useBodyState } from "@/lib/body-state";
+import { useBodyState, EMPTY_ZONES } from "@/lib/body-state";
 import { questionsForClient } from "@/lib/onboarding-questions";
 import { subscribeChannel } from "@/lib/realtime";
 import type { MarkedParts, BodyPartStatus } from "@/components/features/body-viewer";
@@ -29,7 +29,7 @@ interface Props {
 }
 
 export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
-  const zones = useBodyState((s) => s.zones[clientId] ?? {});
+  const zones = useBodyState((s) => s.zones[clientId] ?? EMPTY_ZONES);
   const setAll = useBodyState((s) => s.setAll);
   const mergeZones = useBodyState((s) => s.mergeZones);
   const [segments, setSegments] = useState<Segment[]>([]);

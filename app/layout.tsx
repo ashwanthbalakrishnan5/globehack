@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter_Tight, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -23,6 +23,13 @@ export const metadata: Metadata = {
   title: "Tide — companion layer for Hydrawav3",
   description:
     "Tide · the client nervous system for Hydrawav3 practitioners. Wearable signal, live session context, and lockscreen summary cards, shared through one session-scoped, revocable window.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#07090c",
 };
 
 export default function RootLayout({

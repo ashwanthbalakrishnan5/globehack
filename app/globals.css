@@ -11,4 +11,40 @@ html, body {
   color: var(--fog-0);
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+* { min-width: 0; }
+
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+input, textarea, select, button {
+  font: inherit;
+  color: inherit;
+}
+
+@media (max-width: 640px) {
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="search"] {
+    font-size: 16px;
+  }
+}
+
+button { -webkit-tap-highlight-color: transparent; }
+
+@supports (padding: max(0px)) {
+  .safe-bottom {
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+}
+
+.animate-spin { animation: spin 1s linear infinite; }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }

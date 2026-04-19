@@ -12,6 +12,8 @@ type State = {
   clear: (clientId: string) => void;
 };
 
+export const EMPTY_ZONES: MarkedParts = Object.freeze({}) as MarkedParts;
+
 export const useBodyState = create<State>()(
   persist(
     (set) => ({

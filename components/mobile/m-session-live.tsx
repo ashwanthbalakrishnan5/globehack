@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { MScreen } from "./shell";
 import { subscribeChannel } from "@/lib/realtime";
-import { useBodyState } from "@/lib/body-state";
+import { useBodyState, EMPTY_ZONES } from "@/lib/body-state";
 import { useSession } from "@/lib/store";
 import type { BodyPartStatus } from "@/components/features/body-viewer";
 
@@ -41,7 +41,7 @@ function useElapsedTimer(startedAt: number | null): string {
 export function MSessionLive() {
   const clientId = useSession((s) => s.activeClientId) ?? process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
   const liveStartedAt = useSession((s) => s.liveStartedAt);
-  const zones = useBodyState((s) => s.zones[clientId] ?? {});
+  const zones = useBodyState((s) => s.zones[clientId] ?? EMPTY_ZONES);
   const mergeZones = useBodyState((s) => s.mergeZones);
   const elapsed = useElapsedTimer(liveStartedAt);
 

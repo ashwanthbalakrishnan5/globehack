@@ -4,19 +4,61 @@ import { insforgeBrowser } from "./insforge";
 
 type Handler<T = unknown> = (payload: T) => void;
 
+function realtimeConfigured() {
+  return (
+    typeof process !== "undefined" &&
+    !!process.env.NEXT_PUBLIC_INSFORGE_URL &&
+    !!process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY
+  );
+}
+
 export function subscribeChannel<T = unknown>(
   channel: string,
   event: string,
   handler: Handler<T>
 ): () => void {
-  const client = insforgeBrowser();
+  if (!realtimeConfigured()) return () => {};
 
-  client.realtime.connect().then(() => {
-    client.realtime.subscribe(channel);
-    client.realtime.on<T & object>(event, (payload) => handler(payload));
-  });
+  let active = true;
+  let client: ReturnType<typeof insforgeBrowser> | null = null;
+
+  try {
+    client = insforgeBrowser();
+  } catch {
+    return () => {};
+  }
+
+  const wrappedHandler = (payload: unknown) => {
+    if (!active) return;
+    try {
+      handler(payload as T);
+    } catch (err) {
+      console.warn(`[realtime] handler for ${channel}:${event} threw`, err);
+    }
+  };
+
+  client.realtime
+    .connect()
+    .then(() => {
+      if (!active || !client) return;
+      try {
+        client.realtime.subscribe(channel);
+        client.realtime.on<object>(event, wrappedHandler as (p: object) => void);
+      } catch (err) {
+        console.warn(`[realtime] subscribe failed for ${channel}`, err);
+      }
+    })
+    .catch((err) => {
+      console.warn(`[realtime] connect failed for ${channel}`, err);
+    });
 
   return () => {
-    client.realtime.unsubscribe(channel);
+    active = false;
+    if (!client) return;
+    try {
+      client.realtime.unsubscribe(channel);
+    } catch {
+      /* ignore */
+    }
   };
 }
