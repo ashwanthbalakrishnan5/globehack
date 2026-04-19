@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforgeServer } from "@/lib/insforge";
 import { transcribe } from "@/lib/elevenlabs";
-import { extractNote } from "@/lib/anthropic";
+import { extractNote } from "@/lib/gemini";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: sessionId } = await params;

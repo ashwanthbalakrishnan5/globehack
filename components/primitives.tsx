@@ -78,50 +78,6 @@ export function TideMark({
   );
 }
 
-const pseudoRand = (i: number, seed: number) => {
-  const x = Math.sin((i + 1) * 12.9898 * seed) * 43758.5453;
-  return x - Math.floor(x);
-};
-
-export function Waveform({
-  bars = 48,
-  height = 40,
-  color = "var(--signal)",
-  active = true,
-  seed = 1,
-}: {
-  bars?: number;
-  height?: number;
-  color?: string;
-  active?: boolean;
-  seed?: number;
-}) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 2, height }}>
-      {Array.from({ length: bars }).map((_, i) => {
-        const h = Math.max(4, pseudoRand(i, seed) * height);
-        return (
-          <div
-            key={i}
-            style={{
-              flex: 1,
-              height: h,
-              background: color,
-              opacity: active ? 0.9 : 0.3,
-              borderRadius: 999,
-              animation: active
-                ? `breathe ${1.6 + pseudoRand(i, seed) * 1.2}s ease-in-out ${
-                    pseudoRand(i, seed) * 1
-                  }s infinite`
-                : "none",
-            }}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
 export function WavePath({
   width = 600,
   height = 80,
@@ -394,33 +350,6 @@ export function HRVSpark({
         return <circle key={i} cx={x} cy={y} r={1.8} fill={color} />;
       })}
     </svg>
-  );
-}
-
-export function Dots({
-  total = 4,
-  active = 0,
-  color = "var(--signal)",
-}: {
-  total?: number;
-  active?: number;
-  color?: string;
-}) {
-  return (
-    <div style={{ display: "flex", gap: 6 }}>
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            width: i === active ? 18 : 6,
-            height: 6,
-            borderRadius: 999,
-            background: i <= active ? color : "var(--ink-4)",
-            transition: "all 0.3s",
-          }}
-        />
-      ))}
-    </div>
   );
 }
 
