@@ -6,7 +6,11 @@
  * Falls back to the sample MAC from the API docs if the real device 500s.
  */
 
-const API_BASE = "/hydra-bridge";
+// Browser: hit same-origin proxy (next.config rewrite) to avoid mixed content.
+// Server: hit the upstream directly — relative URLs don't resolve in Node fetch.
+const API_BASE = typeof window === "undefined"
+  ? "http://54.241.236.53:8080"
+  : "/hydra-bridge";
 const FALLBACK_MAC = "74:4D:BD:A0:A3:EC"; // sample from API docs
 
 let cachedToken: string | null = null;
