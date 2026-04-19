@@ -112,7 +112,7 @@ const BodyViewer = forwardRef<BodyViewerHandle, BodyViewerProps>(
       const el = mountRef.current;
       if (!el || el.childElementCount > 0) return;
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(el.clientWidth, el.clientHeight);
       el.appendChild(renderer.domElement);

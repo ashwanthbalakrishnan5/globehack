@@ -406,7 +406,7 @@ export function WContext({
             <div style={{ height: 1, background: "var(--ink-3)", margin: "18px 0 14px" }} />
             <div style={{ display: "flex", gap: 8 }}>
               <Link
-                href={`/practitioner/session/${clientId}/live`}
+                href={`/practitioner/session/${clientId}/onboarding`}
                 style={{
                   flex: 1,
                   height: 44,
@@ -420,9 +420,29 @@ export function WContext({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  gap: 8,
                 }}
               >
-                Accept &amp; start
+                Begin onboarding →
+              </Link>
+              <Link
+                href={`/practitioner/session/${clientId}/live`}
+                style={{
+                  height: 44,
+                  padding: "0 18px",
+                  borderRadius: 10,
+                  background: "var(--ink-2)",
+                  color: "var(--fog-0)",
+                  border: "1px solid var(--ink-3)",
+                  fontSize: 13,
+                  fontFamily: "var(--sans)",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                Skip to live
               </Link>
               <button
                 type="button"

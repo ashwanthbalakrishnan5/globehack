@@ -1,0 +1,15 @@
+{
+  "segments": [
+    { "start": 0.5,  "end": 4.5,  "speaker": "maya",          "text": "Marcus, before we start the session, I want to walk through your last two weeks.", "note_type": "general", "flagged": false, "zones": [] },
+    { "start": 5.0,  "end": 8.5,  "speaker": "marcus-rivera", "text": "Yeah, sounds good. Let's do it.", "note_type": "general", "flagged": false, "zones": [] },
+    { "start": 9.0,  "end": 14.0, "speaker": "maya",          "text": "How has the football been? Still playing twice a week at the weekend pitch?", "note_type": "general", "flagged": false, "zones": [] },
+    { "start": 14.4, "end": 22.5, "speaker": "marcus-rivera", "text": "Twice a week, yeah. Honestly my left knee has been rough after the Sunday match. It's stiff, and when I twist it catches.", "note_type": "complaint", "flagged": true, "zones": [{ "id": "left_knee", "status": "pain" }] },
+    { "start": 23.0, "end": 28.0, "speaker": "maya",          "text": "Okay, I'm marking the left knee. And jogging, you said you bumped the long run up to ten miles?", "note_type": "general", "flagged": false, "zones": [] },
+    { "start": 28.5, "end": 37.0, "speaker": "marcus-rivera", "text": "Ten miles, yeah. Mostly road. My right calf has been tight for the last three runs, and the lower back lights up around mile seven.", "note_type": "complaint", "flagged": true, "zones": [{ "id": "right_leg", "status": "pain" }, { "id": "lower_back", "status": "pain" }] },
+    { "start": 37.5, "end": 41.5, "speaker": "maya",          "text": "Got it, right calf and the lower back. And the gym?", "note_type": "general", "flagged": false, "zones": [] },
+    { "start": 42.0, "end": 51.0, "speaker": "marcus-rivera", "text": "Push pull legs. Been hitting deadlifts heavy on Tuesdays. My left trap has been tight for like ten days now, same thing as last session.", "note_type": "complaint", "flagged": true, "zones": [{ "id": "left_shoulder", "status": "pain" }] },
+    { "start": 51.5, "end": 56.0, "speaker": "maya",          "text": "That left trap is persistent. I'm carrying it forward into the protocol.", "note_type": "general", "flagged": false, "zones": [] },
+    { "start": 56.5, "end": 63.0, "speaker": "marcus-rivera", "text": "Sleep has been bad too, I've been getting like five hours most nights this week.", "note_type": "complaint", "flagged": true, "zones": [] },
+    { "start": 63.5, "end": 68.0, "speaker": "maya",          "text": "That matches the drop I'm seeing in your signals. Let's get you on the mat.", "note_type": "general", "flagged": false, "zones": [] }
+  ]
+}

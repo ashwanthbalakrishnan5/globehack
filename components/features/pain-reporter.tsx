@@ -5,7 +5,18 @@ import dynamic from "next/dynamic";
 import type { BodyViewerHandle, MarkedParts, BodyPartStatus } from "./body-viewer";
 import { BODY_PARTS } from "./body-viewer";
 
-const BodyViewer = dynamic(() => import("./body-viewer"), { ssr: false });
+const BodyViewer = dynamic(() => import("./body-viewer"), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        background: "radial-gradient(circle at 50% 60%, rgba(212,244,90,0.08), #0a0d14 70%)",
+      }}
+    />
+  ),
+});
 
 const GROUPS = [
   { label: "Upper Body", ids: ["head", "neck", "left_shoulder", "right_shoulder", "chest", "left_arm", "right_arm"] },
@@ -17,34 +28,35 @@ type Mode = "pain" | "recovered";
 
 interface PainReporterProps {
   onChange?: (parts: MarkedParts) => void;
+  markedParts?: MarkedParts;
 }
 
-export function PainReporter({ onChange }: PainReporterProps) {
+export function PainReporter({ onChange, markedParts: controlled }: PainReporterProps) {
   const [mode, setMode] = useState<Mode>("pain");
-  const [markedParts, setMarkedParts] = useState<MarkedParts>({});
+  const [internal, setInternal] = useState<MarkedParts>({});
+  const markedParts = controlled ?? internal;
   const viewerRef = useRef<BodyViewerHandle>(null);
 
   const togglePart = useCallback((id: string) => {
-    setMarkedParts((prev) => {
-      const next = { ...prev };
-      if (next[id] === (mode as BodyPartStatus)) {
-        delete next[id];
-      } else {
-        next[id] = mode as BodyPartStatus;
-      }
-      onChange?.(next);
-      return next;
-    });
-  }, [mode, onChange]);
+    const current = controlled ?? internal;
+    const next = { ...current };
+    if (next[id] === (mode as BodyPartStatus)) {
+      delete next[id];
+    } else {
+      next[id] = mode as BodyPartStatus;
+    }
+    if (controlled === undefined) setInternal(next);
+    onChange?.(next);
+  }, [mode, onChange, controlled, internal]);
 
   const handleHover = useCallback((id: string | null) => {
     viewerRef.current?.hoverPart(id);
   }, []);
 
   const clearAll = useCallback(() => {
-    setMarkedParts({});
+    if (controlled === undefined) setInternal({});
     onChange?.({});
-  }, [onChange]);
+  }, [onChange, controlled]);
 
   return (
     <div className="flex h-full bg-[#0a0d14]">
