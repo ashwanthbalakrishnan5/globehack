@@ -39,10 +39,15 @@ export function subscribeChannel<T = unknown>(
 
   client.realtime
     .connect()
-    .then(() => {
+    .then(async () => {
       if (!active || !client) return;
       try {
-        client.realtime.subscribe(channel);
+        const result = await client.realtime.subscribe(channel);
+        if (!result.ok) {
+          console.warn(`[realtime] subscribe to ${channel} denied:`, result.error?.message);
+          return;
+        }
+        if (!active) return;
         client.realtime.on<object>(event, wrappedHandler as (p: object) => void);
       } catch (err) {
         console.warn(`[realtime] subscribe failed for ${channel}`, err);
@@ -56,6 +61,7 @@ export function subscribeChannel<T = unknown>(
     active = false;
     if (!client) return;
     try {
+      client.realtime.off(event, wrappedHandler as (p: object) => void);
       client.realtime.unsubscribe(channel);
     } catch {
       /* ignore */

@@ -39,24 +39,12 @@ export async function POST(req: NextRequest) {
   const db = insforgeServer();
   const isSimulated = !token;
 
-  // Self-heal demo rows only on real QR scan (upserts are slow; simulate assumes seeded data).
+  // Self-heal demo rows fire-and-forget so they don't block the check-in response.
   if (!isSimulated) {
-    try {
-      await db.database
-        .from("practitioners")
-        .upsert(
-          [{ ...DEMO_PRACTITIONER, id: practitionerId }],
-          { onConflict: "id" }
-        );
-      await db.database
-        .from("clients")
-        .upsert(
-          [{ ...DEMO_CLIENT, id: clientId, practitioner_id: practitionerId }],
-          { onConflict: "id" }
-        );
-    } catch (e) {
-      console.warn("Check-in parent upsert failed:", e);
-    }
+    Promise.all([
+      db.database.from("practitioners").upsert([{ ...DEMO_PRACTITIONER, id: practitionerId }], { onConflict: "id" }),
+      db.database.from("clients").upsert([{ ...DEMO_CLIENT, id: clientId, practitioner_id: practitionerId }], { onConflict: "id" }),
+    ]).catch((e) => console.warn("Check-in parent upsert failed:", e));
   }
 
   const { data: session, error } = await db.database
