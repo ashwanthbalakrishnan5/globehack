@@ -13,23 +13,25 @@ The demo primary is **Alina Zhou**, a first-time client pairing with **Maya Reye
 
 ## 0. Before the demo starts
 
-Both surfaces are open:
-- Phone on `/client` (logged in as Alina)
+Both surfaces are open on the **live hosted URL** (same origin, two devices):
+- Phone on `/client/login` (fresh — Alina is demoed as a first-time client every run)
 - Laptop on `/practitioner` (logged in as Maya)
 
-Shared state crosses tabs on the same origin through Zustand + `localStorage` persistence (`lib/store.ts`), and across devices through Insforge realtime channels. Either path is enough to prove the loop; whichever signal lands first drives the UI.
+Cross-device state travels over Insforge realtime channels on the deployed origin. Same-origin Zustand + `localStorage` is a convenience for single-device testing only; the demo itself runs on the live Vercel URL from two physical devices.
+
+**Always-new Alina.** The client login screen clears `tide-session`, `tide-body-state`, and `tide-pose` on mount, so no matter how many times the onboarding and session flow is rehearsed, the next phone open starts from a clean slate. The demo operator never has to manually reset state between runs.
 
 ---
 
 ## 1. Client onboarding (pre-session, one time)
 
-Three screens the client walks through before the first visit:
+Three screens the client walks through before the first visit, in order:
 
-1. **`/client/onboarding`** — Health Connect grant. Permission toggles (HR, sleep, workouts, body). Tapping "Grant" POSTs `/api/onboarding/health-connect` and pushes the 14-day signal window into Insforge.
-2. **`/client/pair`** — Pair with practitioner card (Maya Reyes, DPT).
-3. **`/client/voice-print`** — Voice print capture screen. *Visual only.*
+1. **`/client/onboarding`** — Health Connect grant. Permission toggles (HR, sleep, workouts, body). Tapping "Grant" POSTs `/api/onboarding/health-connect`, pushes the 14-day signal window into Insforge, then routes to `/client/pair`.
+2. **`/client/pair`** — Pair with practitioner card (Maya Reyes, DPT). Tapping "Pair with Maya" routes to `/client/voice-print`.
+3. **`/client/voice-print`** — Voice print capture screen. *Visual only.* Tapping through lands the client on `/client` (home).
 
-After onboarding the client lands on `/client` (home).
+From home the client taps the "Check in with Maya" CTA to open the scanner at `/client/checkin`.
 
 ---
 
@@ -66,7 +68,7 @@ Clicking any schedule row opens `WClientCheckinModal` — a manual pairing path 
 
 - Camera opens via `@yudiel/react-qr-scanner`. Scanning Maya's QR extracts the token and POSTs `/api/checkin` with `{ token, clientId }`.
 - The API route decodes the token, inserts a `sessions` row (protocol defaults to the cooling + 40 Hz preset), then publishes `checkin:{practitionerId}` · `checked_in`.
-- Phone flips to `MCheckIn` (the big QR-showing screen that reads "Show this at the desk") as a confirmation state, then auto-routes to `/client/onboarding/session` 1.6 s later.
+- Phone flips to `MCheckIn` — a minimal "Paired with Maya" confirmation (TideMark pulse, session + bay line, signals-synced vitals card). No QR is shown on the phone; the client has already scanned the desk QR and does not need to present one back. The screen auto-routes to `/client/onboarding/session` 1.6 s later.
 - 1.2 s after the scan the phone *also* fires `/api/onboarding/health-connect` so the practitioner side sees a separate "Signals received" animation beat after the pairing beat.
 
 ### Practitioner side
@@ -106,11 +108,12 @@ Split view. Left: 3D body viewer (`components/features/body-viewer.tsx`, GLTF `p
 
 Pressing **Start session** enters a choreographed sequence:
 
-1. **Belt prep overlay** — full-screen overlay shows the body viewer with a glowing belt at L4–L5, a 9-second auto-countdown, and a "Belt secured · begin now" button.
-2. **Device sync** — POSTs to `lib/mqtt.ts` (`startDevice()`). Placeholder endpoint today; swappable via env.
-3. **Audio lead-in** — 2.8 s later, `public/demo-session.mp3` begins playing.
-4. **Transcription pipeline** — POST to `/api/session/[id]/start` with `audioUrl`. That route calls ElevenLabs Scribe (`lib/elevenlabs.ts`) for diarized segments, then Gemini 3 Flash (`lib/gemini.ts`) for per-segment structured extraction (note_type, quote, rationale, flagged, affectedZones). Each segment writes to `session_notes` and publishes `session:{id}:notes` · `note_added` plus `body:{clientId}` · `zones_updated`.
-5. **Fallback** — if fewer than two notes arrive within 6 s, the UI falls back to the cached `public/demo-transcript.json` scrubbed against audio playback time. Transcript still animates at the right pace.
+1. **Two-party consent banner** — a compact pill sits in the live header the entire session: "⚠ Two-party consent · audio recorded with client acknowledgment." It is visible the whole time Scribe is transcribing so the practitioner has a continuous reminder that the room is being recorded with the client's knowledge.
+2. **Belt prep overlay** — full-screen overlay shows the body viewer with a glowing belt at L4–L5, a 9-second auto-countdown, and a "Belt secured · begin now" button.
+3. **Device sync** — POSTs to `lib/mqtt.ts` (`startDevice()`). Placeholder endpoint today; swappable via env.
+4. **Audio lead-in** — 2.8 s later, `public/demo-session.mp3` begins playing.
+5. **Transcription pipeline** — POST to `/api/session/[id]/start` with `audioUrl`. That route calls ElevenLabs Scribe (`lib/elevenlabs.ts`) for diarized segments, then Gemini 3 Flash (`lib/gemini.ts`) for per-segment structured extraction (note_type, quote, rationale, flagged, affectedZones). Each segment writes to `session_notes` and publishes `session:{id}:notes` · `note_added` plus `body:{clientId}` · `zones_updated`.
+6. **Fallback** — if fewer than two notes arrive within 6 s, the UI falls back to the cached `public/demo-transcript.json` scrubbed against audio playback time. Transcript still animates at the right pace.
 
 Side panel on the practitioner: live body viewer, pose comparison (before/after once a second capture is taken), mocked live vitals, protocol meter, auto-note chips appearing as they're flagged.
 
@@ -196,6 +199,5 @@ Each row exposes **Draft message** → `WDraftMessageDrawer` with a pre-written 
 ### Explicitly out of scope
 
 - Real Android Health Connect / Apple HealthKit bridge.
-- Voice print enrollment as a biometric (narrative only).
 - Platform push notifications (summary uses an in-app sheet via realtime instead).
 - Third-party SDK, long-term central storage of raw wearable data.

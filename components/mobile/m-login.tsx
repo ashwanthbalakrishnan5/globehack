@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { MScreen } from "./shell";
 import { TideMark } from "@/components/primitives";
@@ -9,6 +9,19 @@ import { TideMark } from "@/components/primitives";
 function setAuthCookie() {
   if (typeof document === "undefined") return;
   document.cookie = "tide-auth=1; path=/; max-age=2592000; samesite=lax";
+}
+
+// Demo-first: every time the client hits login, wipe any persisted session,
+// body state, or pose capture so Alina always presents as a brand-new client.
+function wipeDemoState() {
+  if (typeof window === "undefined") return;
+  ["tide-session", "tide-body-state", "tide-pose"].forEach((k) => {
+    try {
+      window.localStorage.removeItem(k);
+    } catch {
+      /* private mode / quota — non-fatal for demo */
+    }
+  });
 }
 
 function SocialButton({ provider, onClick }: { provider: "google" | "apple"; onClick: () => void }) {
@@ -45,8 +58,13 @@ export function MClientLogin() {
   const [email, setEmail] = useState("");
   const [pending, setPending] = useState(false);
 
+  useEffect(() => {
+    wipeDemoState();
+  }, []);
+
   const enter = () => {
     setPending(true);
+    wipeDemoState();
     setAuthCookie();
     setTimeout(() => router.push("/client/onboarding"), 250);
   };

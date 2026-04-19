@@ -28,7 +28,7 @@ export function MOnboarding() {
           body: JSON.stringify({ clientId }),
         });
         setGranted(true);
-        setTimeout(() => router.push("/client/checkin"), 700);
+        setTimeout(() => router.push("/client/pair"), 700);
       } catch (e) {
         console.error("Health Connect grant failed:", e);
       }

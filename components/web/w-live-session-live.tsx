@@ -342,6 +342,25 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
         <span className="mono upper" style={{ fontSize: 10, color: isPlaying ? "var(--signal)" : "var(--fog-3)" }}>
           {statusLabel} · Alina Zhou · Bay 3
         </span>
+        <span
+          title="Audio is recorded with the client's acknowledgment. Required in two-party consent jurisdictions."
+          className="mono upper"
+          style={{
+            fontSize: 9,
+            letterSpacing: 0.14,
+            padding: "4px 8px",
+            borderRadius: 6,
+            background: "rgba(245,176,83,0.1)",
+            color: "var(--spark, #f5b053)",
+            border: "1px solid rgba(245,176,83,0.35)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <span aria-hidden>⚠</span>
+          two-party consent · audio recorded with client ack
+        </span>
         <span style={{ flex: 1 }} />
         <span className="mono tnum" style={{ fontSize: 14, color: "var(--fog-0)" }}>
           {fmt(elapsed)} <span style={{ color: "var(--fog-3)", fontSize: 11 }}>/ 90:00</span>
