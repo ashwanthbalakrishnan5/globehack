@@ -1,16 +1,22 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useTransition } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { subscribeChannel } from "@/lib/realtime";
 import { useSession } from "@/lib/store";
+import { SyncOverlay } from "@/components/sync-overlay";
 
 export function WCheckinQR({ practitionerId }: { practitionerId?: string }) {
   const [tokenUrl, setTokenUrl] = useState<string | null>(null);
+  const [synced, setSynced] = useState(false);
+  const [pending, startTransition] = useTransition();
   const router = useRouter();
   const startCheckIn = useSession((s) => s.startCheckIn);
   const pid = practitionerId ?? process.env.NEXT_PUBLIC_DEMO_PRACTITIONER_ID ?? "maya-reyes";
+  const practitionerName =
+    process.env.NEXT_PUBLIC_DEMO_PRACTITIONER_NAME ?? "Maya";
 
   const refreshToken = useCallback(async () => {
     const res = await fetch("/api/checkin/token");
@@ -31,21 +37,28 @@ export function WCheckinQR({ practitionerId }: { practitionerId?: string }) {
       "checked_in",
       ({ sessionId, clientId }) => {
         startCheckIn(clientId, sessionId, "qr");
-        router.push(`/practitioner/session/${clientId}`);
+        setSynced(true);
+        setTimeout(() => {
+          router.push(`/practitioner/session/${clientId}`);
+        }, 1500);
       }
     );
     return unsub;
   }, [pid, router, startCheckIn]);
 
-  const handleSimulate = async () => {
-    const res = await fetch("/api/checkin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientId: process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera" }),
+  const handleSimulate = () => {
+    startTransition(async () => {
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera" }),
+      });
+      const { sessionId } = await res.json();
+      startCheckIn("marcus-rivera", sessionId, "simulated");
+      setSynced(true);
+      await new Promise((r) => setTimeout(r, 1500));
+      router.push(`/practitioner/session/marcus-rivera`);
     });
-    const { sessionId } = await res.json();
-    startCheckIn("marcus-rivera", sessionId, "simulated");
-    router.push(`/practitioner/session/marcus-rivera`);
   };
 
   return (
@@ -108,6 +121,7 @@ export function WCheckinQR({ practitionerId }: { practitionerId?: string }) {
       {process.env.NODE_ENV === "development" && (
         <button
           onClick={handleSimulate}
+          disabled={pending || synced}
           style={{
             height: 28,
             padding: "0 14px",
@@ -117,13 +131,19 @@ export function WCheckinQR({ practitionerId }: { practitionerId?: string }) {
             border: "1px solid var(--ink-4)",
             fontSize: 10,
             fontFamily: "var(--mono)",
-            cursor: "pointer",
+            cursor: pending || synced ? "wait" : "pointer",
             letterSpacing: 0.5,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            opacity: pending || synced ? 0.75 : 1,
           }}
         >
-          dev · simulate check-in
+          {pending && <Loader2 size={10} className="animate-spin" />}
+          {pending ? "pairing..." : "dev · simulate check-in"}
         </button>
       )}
+      <SyncOverlay show={synced} name={practitionerName} />
     </div>
   );
 }

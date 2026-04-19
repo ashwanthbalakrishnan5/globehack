@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { MCheckIn } from "@/components/mobile/m-checkin";
+import { SyncOverlay } from "@/components/sync-overlay";
 import { useSession } from "@/lib/store";
 
 function CheckinHandler() {
@@ -13,10 +15,15 @@ function CheckinHandler() {
   const phase = useSession((s) => s.phase);
   const summaryReady = useSession((s) => s.summaryReady);
   const startCheckIn = useSession((s) => s.startCheckIn);
+  const [posting, setPosting] = useState(false);
+  const [synced, setSynced] = useState(false);
+  const practitionerName =
+    process.env.NEXT_PUBLIC_DEMO_PRACTITIONER_NAME ?? "Maya";
 
   useEffect(() => {
     if (token && phase === "idle") {
       const clientId = process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
+      setPosting(true);
       fetch("/api/checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -24,9 +31,13 @@ function CheckinHandler() {
       })
         .then((r) => r.json())
         .then(({ sessionId }) => {
-          if (sessionId) startCheckIn(clientId, sessionId, "qr");
+          if (sessionId) {
+            startCheckIn(clientId, sessionId, "qr");
+            setSynced(true);
+          }
         })
-        .catch(console.error);
+        .catch(console.error)
+        .finally(() => setPosting(false));
     } else if (!token && phase === "idle") {
       startCheckIn(
         process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera",
@@ -35,6 +46,12 @@ function CheckinHandler() {
       );
     }
   }, [token, phase, startCheckIn]);
+
+  useEffect(() => {
+    if (!synced) return;
+    const t = setTimeout(() => router.push("/client/onboarding/session"), 1600);
+    return () => clearTimeout(t);
+  }, [synced, router]);
 
   useEffect(() => {
     if (summaryReady) router.push("/client/summary");
@@ -69,28 +86,35 @@ function CheckinHandler() {
             fontFamily: "var(--sans)",
             fontSize: 13,
             textAlign: "center",
+            opacity: synced ? 0.4 : 1,
+            pointerEvents: synced ? "none" : "auto",
           }}
         >
           Cancel
         </Link>
-        <Link
-          href="/client/session"
+        <div
           style={{
             flex: 1,
             padding: "12px 16px",
             background: "var(--signal)",
             color: "var(--signal-ink)",
             borderRadius: 12,
-            textDecoration: "none",
             fontFamily: "var(--sans)",
             fontSize: 13,
             fontWeight: 600,
             textAlign: "center",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            opacity: posting ? 0.8 : 1,
           }}
         >
-          Session started →
-        </Link>
+          {posting && <Loader2 size={14} className="animate-spin" />}
+          {posting ? "Syncing with Maya..." : synced ? "Paired" : "Session started →"}
+        </div>
       </div>
+      <SyncOverlay show={synced} name={practitionerName} />
     </div>
   );
 }
