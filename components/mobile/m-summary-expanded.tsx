@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRef, useState, useTransition } from "react";
+import { Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { MScreen } from "./shell";
 import { Meter } from "@/components/primitives";
 import type { SummaryCard } from "@/lib/types";
@@ -14,9 +17,57 @@ export function MSummaryExpanded({ card }: Props) {
   const durationMin = card?.duration_min ?? 42;
   const hrvAtSession = card?.hrv_at_session ?? 50;
 
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [sharing, startShare] = useTransition();
+  const [liked, setLiked] = useState(false);
+
+  const handleShare = () => {
+    startShare(async () => {
+      if (!cardRef.current) return;
+      try {
+        const { default: html2canvas } = await import("html2canvas");
+        const canvas = await html2canvas(cardRef.current, {
+          backgroundColor: "#0b0e11",
+          scale: 3,
+          useCORS: true,
+          logging: false,
+        });
+        const blob = await new Promise<Blob | null>((resolve) =>
+          canvas.toBlob(resolve, "image/png", 1)
+        );
+        if (!blob) return;
+        const file = new File([blob], "tide-session.png", { type: "image/png" });
+        if (
+          typeof navigator !== "undefined" &&
+          "share" in navigator &&
+          typeof navigator.canShare === "function" &&
+          navigator.canShare({ files: [file] })
+        ) {
+          await navigator.share({
+            files: [file],
+            title: "Tide · session summary",
+            text: quote,
+          });
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "tide-session.png";
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error("share failed", e);
+      }
+    });
+  };
+
   return (
     <MScreen pt={54}>
-      <div style={{ padding: "24px 24px 0", display: "flex", flexDirection: "column", height: "100%" }}>
+      <div
+        ref={cardRef}
+        style={{ padding: "24px 24px 0", display: "flex", flexDirection: "column", height: "100%" }}
+      >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Link
             href="/client"
@@ -130,6 +181,9 @@ export function MSummaryExpanded({ card }: Props) {
         <div style={{ flex: 1 }} />
         <div style={{ paddingBottom: 32, display: "flex", gap: 8 }}>
           <button
+            type="button"
+            onClick={handleShare}
+            disabled={sharing}
             style={{
               flex: 1,
               height: 52,
@@ -141,24 +195,46 @@ export function MSummaryExpanded({ card }: Props) {
               fontWeight: 600,
               fontFamily: "var(--sans)",
               boxShadow: "var(--glow-signal)",
-              cursor: "pointer",
+              cursor: sharing ? "wait" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              opacity: sharing ? 0.85 : 1,
             }}
           >
-            Share card
+            {sharing && <Loader2 size={16} className="animate-spin" />}
+            {sharing ? "Rendering card..." : "Share card"}
           </button>
           <button
+            type="button"
+            onClick={() => setLiked((v) => !v)}
+            aria-pressed={liked}
             style={{
               width: 52,
               height: 52,
               borderRadius: 14,
-              background: "var(--ink-2)",
-              border: "1px solid var(--ink-3)",
-              color: "var(--fog-0)",
+              background: liked ? "rgba(212,244,90,0.12)" : "var(--ink-2)",
+              border: `1px solid ${liked ? "var(--signal)" : "var(--ink-3)"}`,
+              color: liked ? "var(--signal)" : "var(--fog-0)",
               fontSize: 18,
               cursor: "pointer",
+              overflow: "hidden",
+              position: "relative",
             }}
           >
-            ♡
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={liked ? "on" : "off"}
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 1.4, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 360, damping: 18 }}
+                style={{ display: "inline-block" }}
+              >
+                {liked ? "♥" : "♡"}
+              </motion.span>
+            </AnimatePresence>
           </button>
         </div>
       </div>
