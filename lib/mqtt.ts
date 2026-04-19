@@ -6,7 +6,7 @@
  * Falls back to the sample MAC from the API docs if the real device 500s.
  */
 
-const API_BASE = "http://54.241.236.53:8080";
+const API_BASE = "/hydra-bridge";
 const FALLBACK_MAC = "74:4D:BD:A0:A3:EC"; // sample from API docs
 
 let cachedToken: string | null = null;
