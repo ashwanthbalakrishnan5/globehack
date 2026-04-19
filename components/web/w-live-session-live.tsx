@@ -140,6 +140,7 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
   const [mqttAck, setMqttAck] = useState<string | null>(null);
   const [showRomGate, setShowRomGate] = useState(false);
   const [showImprovements, setShowImprovements] = useState(false);
+  const [postureSkipped, setPostureSkipped] = useState(false);
   const fallbackSegs = useRef<FallbackSegment[]>([]);
   const receivedCount = useRef(0);
   const fallbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -326,26 +327,23 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
 
   const handleEndReview = useCallback(async () => {
     if (phase === "ending") return;
-    // Gate: require all after-captures before ending
-    if (!allAftersDone) {
+    // Fire device stop immediately so the belt powers down regardless of the CV gate
+    fetch("/api/device/stop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mac: device?.mac ?? "74:4D:BD:A0:A3:EC" }),
+    }).catch((e) => console.warn("mqtt stop failed", e));
+    // Gate: require all after-captures before ending, unless posture check was skipped
+    if (!allAftersDone && !postureSkipped) {
       setShowRomGate(true);
       return;
     }
     setShowImprovements(true);
-  }, [phase, allAftersDone]);
+  }, [phase, allAftersDone, postureSkipped, device]);
 
   const handleConfirmEnd = useCallback(async () => {
     setShowImprovements(false);
     setPhase("ending");
-    try {
-      await fetch("/api/device/stop", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mac: device?.mac ?? "74:4D:BD:A0:A3:EC" }),
-      });
-    } catch (e) {
-      console.warn("mqtt stop failed", e);
-    }
     const bodyAfter: Record<string, BodyPartStatus> = {};
     for (const [id, status] of Object.entries(zones)) {
       bodyAfter[id] = status === "pain" ? "recovered" : status;
@@ -364,7 +362,7 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
     }
     clearPoses(clientId);
     router.push(`/practitioner/session/${clientId}/notes`);
-  }, [sessionId, clientId, router, zones, device, clearPoses]);
+  }, [sessionId, clientId, router, zones, clearPoses]);
 
   const flagged = notes.filter((n) => n.flagged);
   const showBeltOverlay = phase === "beltPrep" || phase === "starting";
@@ -517,7 +515,7 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
             border: "none",
           }}
         >
-          {sessionStarted && !allAftersDone
+          {sessionStarted && !allAftersDone && !postureSkipped
             ? `End & review · ${MOVEMENTS.length - aftersDone.length} ROM pending`
             : "End & review"}
         </LoadingButton>
@@ -579,23 +577,29 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
           >
             <BodyViewer markedParts={zones} />
           </div>
-          <div
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              background: "rgba(10,13,20,0.88)",
-              border: "1px solid rgba(212,244,90,0.22)",
-              marginBottom: 12,
-            }}
-          >
-            {MOVEMENTS.map((m) => {
-              const before = captures[`${clientId}:before:${m.id}`];
-              const after = captures[`${clientId}:after:${m.id}`];
-              if (!before || !after) return null;
-              return <PoseComparison key={m.id} before={before} after={after} />;
-            })}
-            <PoseCapturePanel clientId={clientId} phase="after" />
-          </div>
+          {!postureSkipped && (
+            <div
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                background: "rgba(10,13,20,0.88)",
+                border: "1px solid rgba(212,244,90,0.22)",
+                marginBottom: 12,
+              }}
+            >
+              {MOVEMENTS.map((m) => {
+                const before = captures[`${clientId}:before:${m.id}`];
+                const after = captures[`${clientId}:after:${m.id}`];
+                if (!before || !after) return null;
+                return <PoseComparison key={m.id} before={before} after={after} />;
+              })}
+              <PoseCapturePanel
+                clientId={clientId}
+                phase="after"
+                onSkip={() => setPostureSkipped(true)}
+              />
+            </div>
+          )}
 
           <div className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)", marginBottom: 10 }}>
             live vitals
@@ -704,6 +708,11 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
               captures={captures}
               onDone={() => { setShowRomGate(false); setShowImprovements(true); }}
               onDismiss={() => setShowRomGate(false)}
+              onSkip={() => {
+                setPostureSkipped(true);
+                setShowRomGate(false);
+                setShowImprovements(true);
+              }}
             />
           )}
         </AnimatePresence>
@@ -874,11 +883,13 @@ function RomGateOverlay({
   captures,
   onDone,
   onDismiss,
+  onSkip,
 }: {
   clientId: string;
   captures: Record<string, import("@/lib/pose-store").PoseCapture>;
   onDone: () => void;
   onDismiss: () => void;
+  onSkip: () => void;
 }) {
   const allDone = MOVEMENTS.every((m) => !!captures[`${clientId}:after:${m.id}`]);
 
@@ -936,18 +947,31 @@ function RomGateOverlay({
 
       {/* Inline capture panel */}
       <div style={{ width: "100%", maxWidth: 480 }}>
-        <PoseCapturePanel clientId={clientId} phase="after" />
+        <PoseCapturePanel clientId={clientId} phase="after" onSkip={onSkip} />
       </div>
 
-      <button
-        onClick={onDismiss}
-        style={{
-          fontSize: 11, color: "var(--fog-3)", background: "none",
-          border: "none", cursor: "pointer", fontFamily: "var(--mono)",
-        }}
-      >
-        ← back to session
-      </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+        <button
+          onClick={onDismiss}
+          style={{
+            fontSize: 11, color: "var(--fog-3)", background: "none",
+            border: "none", cursor: "pointer", fontFamily: "var(--mono)",
+          }}
+        >
+          ← back to session
+        </button>
+        <button
+          onClick={onSkip}
+          style={{
+            fontSize: 11, color: "var(--fog-2)", background: "none",
+            border: "1px dashed var(--ink-3)", cursor: "pointer",
+            fontFamily: "var(--mono)", padding: "6px 12px", borderRadius: 6,
+            letterSpacing: 0.12, textTransform: "uppercase",
+          }}
+        >
+          skip & end session
+        </button>
+      </div>
     </motion.div>
   );
 }

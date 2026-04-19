@@ -20,9 +20,10 @@ const PoseCapture = dynamic(
 interface Props {
   clientId: string;
   phase: "before" | "after";
+  onSkip?: () => void;
 }
 
-export function PoseCapturePanel({ clientId, phase }: Props) {
+export function PoseCapturePanel({ clientId, phase, onSkip }: Props) {
   const [active, setActive] = useState<Movement | null>(null);
   const setCapture = usePoseStore((s) => s.setCapture);
   const captures = usePoseStore((s) => s.captures);
@@ -58,6 +59,21 @@ export function PoseCapturePanel({ clientId, phase }: Props) {
           >
             ← back
           </button>
+          {onSkip && (
+            <button
+              onClick={onSkip}
+              style={{
+                fontSize: 10,
+                color: "var(--fog-3)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "var(--mono)",
+              }}
+            >
+              skip →
+            </button>
+          )}
         </div>
         <PoseCapture
           movement={active}
@@ -112,6 +128,26 @@ export function PoseCapturePanel({ clientId, phase }: Props) {
           </button>
         );
       })}
+      {onSkip && (
+        <button
+          onClick={onSkip}
+          style={{
+            marginTop: 2,
+            padding: "6px 10px",
+            borderRadius: 6,
+            background: "none",
+            border: "1px dashed var(--ink-3)",
+            color: "var(--fog-3)",
+            cursor: "pointer",
+            fontFamily: "var(--mono)",
+            fontSize: 10,
+            letterSpacing: 0.12,
+            textTransform: "uppercase",
+          }}
+        >
+          skip posture check
+        </button>
+      )}
     </div>
   );
 }

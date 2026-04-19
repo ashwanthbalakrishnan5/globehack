@@ -71,6 +71,7 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
   const [paused, setPaused] = useState(false);
   const [stage, setStage] = useState<Stage>("analyzing");
   const [revealedQuestions, setRevealedQuestions] = useState(0);
+  const [postureSkipped, setPostureSkipped] = useState(false);
   const [, startTransition] = useTransition();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -369,21 +370,27 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
           <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
             <PainReporter markedParts={zones} onChange={handleZoneChange} />
 
-            <div
-              style={{
-                position: "absolute",
-                top: 16,
-                left: 16,
-                padding: "12px 14px",
-                borderRadius: 12,
-                background: "rgba(10,13,20,0.88)",
-                backdropFilter: "blur(12px)",
-                border: "1px solid rgba(212,244,90,0.22)",
-                width: 300,
-              }}
-            >
-              <PoseCapturePanel clientId={clientId} phase="before" />
-            </div>
+            {!postureSkipped && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 16,
+                  left: 16,
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  background: "rgba(10,13,20,0.88)",
+                  backdropFilter: "blur(12px)",
+                  border: "1px solid rgba(212,244,90,0.22)",
+                  width: 300,
+                }}
+              >
+                <PoseCapturePanel
+                  clientId={clientId}
+                  phase="before"
+                  onSkip={() => setPostureSkipped(true)}
+                />
+              </div>
+            )}
           </div>
 
           <div
