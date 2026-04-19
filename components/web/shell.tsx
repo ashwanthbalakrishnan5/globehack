@@ -32,7 +32,7 @@ const NAV: {
     k: "live",
     label: "Live",
     icon: "◉",
-    href: "/practitioner/session/marcus-rivera/live",
+    href: "/practitioner/session/marcus-rivera/device",
     matches: (p) => /\/session\/[^/]+\/(live|resonance)/.test(p) || p.endsWith("/session/marcus-rivera"),
   },
   {

@@ -110,7 +110,7 @@ Pressing **Start session** enters a choreographed sequence:
 
 1. **Two-party consent banner** — a compact pill sits in the live header the entire session: "⚠ Two-party consent · audio recorded with client acknowledgment." It is visible the whole time Scribe is transcribing so the practitioner has a continuous reminder that the room is being recorded with the client's knowledge.
 2. **Belt prep overlay** — full-screen overlay shows the body viewer with a glowing belt at L4–L5, a 9-second auto-countdown, and a "Belt secured · begin now" button.
-3. **Device sync** — POSTs to `lib/mqtt.ts` (`startDevice()`). Placeholder endpoint today; swappable via env.
+3. **Device sync** — `lib/mqtt.ts` `startDevice(mac, protocol)` authenticates against the real Hydrawav3 MQTT-over-HTTP bridge (`/api/v1/auth/login` → JWT) and publishes the full session config (playCmd, cycleRepetitions, leftFuncs/rightFuncs, pwmValues, hotDrop, coldDrop, vibMin/Max, totalDuration) on `HydraWav3Pro/config`. If the paired MAC errors, it falls back to the sample MAC from the device API docs so the belt still runs in the demo.
 4. **Audio lead-in** — 2.8 s later, `public/demo-session.mp3` begins playing.
 5. **Transcription pipeline** — POST to `/api/session/[id]/start` with `audioUrl`. That route calls ElevenLabs Scribe (`lib/elevenlabs.ts`) for diarized segments, then Gemini 3 Flash (`lib/gemini.ts`) for per-segment structured extraction (note_type, quote, rationale, flagged, affectedZones). Each segment writes to `session_notes` and publishes `session:{id}:notes` · `note_added` plus `body:{clientId}` · `zones_updated`.
 6. **Fallback** — if fewer than two notes arrive within 6 s, the UI falls back to the cached `public/demo-transcript.json` scrubbed against audio playback time. Transcript still animates at the right pace.
@@ -188,7 +188,7 @@ Each row exposes **Draft message** → `WDraftMessageDrawer` with a pre-written 
 ### Mocked / staged
 
 - **Session audio sources.** Both `demo-onboarding.mp3` and `demo-session.mp3` are pre-recorded files in `public/`. The mic is not live. Everything downstream (Scribe, Gemini, DB writes, realtime, UI) is real against that audio. This is the deliberate stage input.
-- **Hydrawav3 belt MQTT.** `lib/mqtt.ts` targets a placeholder endpoint by default and returns a synthetic ack. Swappable via `NEXT_PUBLIC_MQTT_BASE_URL` + `NEXT_PUBLIC_HYDRAWAV3_MAC_ID` when the hardware is available.
+- **Hydrawav3 belt MQTT.** `lib/mqtt.ts` targets the real Hydrawav3 MQTT-over-HTTP bridge, authenticates for a JWT, and publishes real session config payloads (playCmd, cycles, pwmValues, hot/coldDrop, vibMin/Max, totalDuration) on `HydraWav3Pro/config`. A paired MAC is used when available; otherwise it falls back to the sample MAC from the device API docs so the belt still runs during the demo.
 - **Live vitals during the session** (HR 74, HRV ↓11 bpm, etc.) are hardcoded for the demo arc.
 - **Alina's Health Connect payload** is a hand-tuned 14-day body rather than a live Android Health Connect bridge (`app/api/onboarding/health-connect/route.ts`).
 - **Today dashboard badges** (projected revenue $1,120, 68% rebook rate, avg client HRV wave, first two schedule slots) are visual anchors, not computed.

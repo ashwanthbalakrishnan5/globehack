@@ -431,7 +431,7 @@ export function WContext({
                 Begin onboarding →
               </Link>
               <Link
-                href={`/practitioner/session/${clientId}/live`}
+                href={`/practitioner/session/${clientId}/device`}
                 style={{
                   height: 44,
                   padding: "0 18px",

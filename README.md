@@ -188,6 +188,33 @@ The relapse list subscribes to every `privacy:{clientId}` channel and hides any 
 
 ---
 
+## Business model
+
+Tide is a premium B2B tier inside Hydrawav3's existing practitioner relationship. Same buyer as the belt, same billing account, higher ARPU. No new customer segment, no new billing stack.
+
+| Tier | Price | Who | What's in it | Limits |
+| ---- | ----- | --- | ------------ | ------ |
+| **Solo** | **$129 / seat / mo** | Independent practitioner running their own practice with their own belt | Practitioner and client surfaces, AI intake (Scribe + Gemini), protocol recommender, summary cards, relapse watchlist, MQTT belt control | 1 practitioner, 1 belt, 100 active clients |
+| **Clinic** | **$99 / seat / mo**, 2 to 10 seats | Recovery studios, small PT, chiro, and wellness practices | Everything in Solo, plus multi-practitioner scheduling, multi-bay belt routing, shared client records, revenue and retention admin dashboard, two-party consent audit log | Up to 5 belts, up to 10 seats |
+| **Enterprise** | **From $1,499 / mo** | Franchise chains, pro sports teams, PT groups, corporate wellness | Everything in Clinic, plus SSO, HIPAA BAA, EMR export, white-label branding, custom protocol library, REST API, dedicated CSM, annual SLA | Unlimited |
+
+**Pricing rationale.** The belt is a one-time $2,500. Tide Solo at $129 per month is $1,548 per year, roughly 62% of belt cost in recurring software value per practitioner. One recovered rebook per month at $150 per session covers the subscription. A five-seat Clinic at $495 per month pays back on two rebooks per month across the team. Enterprise sits as a line item inside existing EMR and analytics budgets.
+
+## Go-to-market
+
+Three phases, all inside the existing Hydrawav3 B2B relationship.
+
+**Phase 1. Attach to the installed base.**
+Hydrawav3 already has clinic and practitioner accounts from belt sales. Those are the warmest possible leads. Every new professional belt order includes a 60-day Tide trial. Month 3 invoices auto-enroll at the matching tier. Billing flows through the existing Hydrawav3 account, so there is no new stack to stand up.
+
+**Phase 2. Convert trials, expand inside accounts.**
+Trial-to-paid conversion is the primary metric. Once a clinic is on Clinic tier, expansion comes from seats added as the practice grows and from moving to Enterprise when SSO, BAA, or EMR export requirements surface.
+
+**Phase 3. Open the platform.**
+The intake pipeline, body-zone state machine, and summary-card layer are modality-agnostic. Once Tide is entrenched in Hydrawav3 clinics, the same software layer serves adjacent recovery modalities (PT, chiro, sports performance), extending Hydrawav3's reach without new hardware.
+
+---
+
 ## Running locally
 
 ```bash
