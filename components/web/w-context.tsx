@@ -4,7 +4,16 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { BioGrid, HRVSpark, Tag } from "@/components/primitives";
 import { WShell } from "./shell";
-import type { HealthSnapshot } from "@/lib/types";
+import type { HealthSnapshot, SessionNote, ReasoningLine } from "@/lib/types";
+import { recommend } from "@/lib/protocol-rules";
+
+const REASON_COLOR: Record<ReasoningLine["color"], string> = {
+  hrv: "var(--hrv)",
+  hr: "var(--hr)",
+  sleep: "var(--sleep)",
+  note: "var(--lymph)",
+  default: "var(--fog-3)",
+};
 
 function BioCell({
   label,
@@ -121,6 +130,7 @@ export function WContext({
   clientProfile = "endurance athlete",
   snapshots = [],
   priorNotes = [],
+  sessionNotes = [],
 }: {
   clientId?: string;
   clientName?: string;
@@ -128,6 +138,7 @@ export function WContext({
   clientProfile?: string;
   snapshots?: HealthSnapshot[];
   priorNotes?: { date: string; quote: string }[];
+  sessionNotes?: SessionNote[];
 }) {
   const latest = snapshots[snapshots.length - 1];
   const earliest = snapshots[0];
@@ -148,6 +159,12 @@ export function WContext({
     { date: "apr 11", quote: "Left trap is worse this week, honestly" },
     { date: "mar 24", quote: "left trap is a bit tight" },
   ];
+
+  const reco = recommend(snapshots, sessionNotes);
+  const headline = reco.protocol.displayName;
+  const emphasis = reco.protocol.parameters.emphasis ?? "bilateral";
+  const frequencyHz = reco.protocol.parameters.frequency_hz ?? 30;
+  const placement = reco.protocol.parameters.placement;
 
   return (
     <WShell pageName="today">
@@ -280,26 +297,32 @@ export function WContext({
                 recommended protocol
               </div>
               <div className="serif" style={{ fontSize: 30, letterSpacing: -0.02, marginTop: 6 }}>
-                Parasympathetic reset, <em style={{ color: "var(--signal)" }}>cooling</em>.
+                {headline.split(new RegExp(`(${emphasis})`, "i")).map((frag, i) =>
+                  frag.toLowerCase() === emphasis.toLowerCase() ? (
+                    <em key={i} style={{ color: "var(--signal)" }}>{frag}</em>
+                  ) : (
+                    <span key={i}>{frag}</span>
+                  )
+                )}
               </div>
             </div>
-            <Tag color="var(--signal)" variant="solid">confidence · high</Tag>
+            <Tag color="var(--signal)" variant="solid">confidence · {reco.confidence}</Tag>
           </div>
 
           <div style={{ marginTop: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {[
-              { signal: `HRV ${hrv}ms`, evidence: `down ${Math.abs(hrvDelta)}% from personal baseline`, param: "→ parasympathetic emphasis", color: "var(--hrv)" },
-              { signal: `Resting HR ${rhr}`, evidence: `elevated ${rhrDelta} bpm, 4 days`, param: "→ 40Hz lymphatic vibration", color: "var(--hr)" },
-              { signal: `Sleep ${sleepLabel}`, evidence: "2 nights below threshold", param: "→ extended duration · 38m", color: "var(--sleep)" },
-              { signal: "Prior note", evidence: `"${displayNotes[0]?.quote ?? "left trap tight"}" · ${displayNotes[0]?.date ?? "recent"}`, param: "→ Sun pad left placement", color: "var(--lymph)" },
-            ].map((rc, i) => (
+            {reco.reasoning.map((line, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.18, duration: 0.3 }}
               >
-                <ReasonCard {...rc} />
+                <ReasonCard
+                  signal={line.signal}
+                  evidence={line.evidence}
+                  param={`→ ${line.mapsTo}`}
+                  color={REASON_COLOR[line.color]}
+                />
               </motion.div>
             ))}
           </div>
@@ -317,10 +340,10 @@ export function WContext({
           >
             <BioGrid color="rgba(212,244,90,0.04)" size={18} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16, position: "relative" }}>
-              <Param label="duration" value="12" unit="min" />
-              <Param label="vibration" value="40" unit="Hz" color="var(--lymph)" />
-              <Param label="thermal" value="−4°" unit="cool" color="var(--cool)" />
-              <Param label="belt" value="Sun · L" color="var(--signal)" />
+              <Param label="duration" value={String(reco.protocol.duration_min)} unit="min" />
+              <Param label="vibration" value={String(frequencyHz)} unit="Hz" color="var(--lymph)" />
+              <Param label="thermal" value={emphasis === "cooling" ? "−4°" : emphasis === "warmth" ? "+3°" : "0°"} unit={emphasis === "cooling" ? "cool" : emphasis === "warmth" ? "warm" : "neutral"} color={emphasis === "cooling" ? "var(--cool)" : emphasis === "warmth" ? "var(--flare)" : "var(--fog-0)"} />
+              <Param label="belt" value={placement ? placement.replace("Sun pad ", "Sun · ").replace("left", "L").replace("right", "R") : "Bilateral"} color="var(--signal)" />
             </div>
             <div style={{ height: 1, background: "var(--ink-3)", margin: "18px 0 14px" }} />
             <div style={{ display: "flex", gap: 8 }}>

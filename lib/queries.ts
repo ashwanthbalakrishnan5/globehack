@@ -67,6 +67,26 @@ export const getRecentSessions = cache(async (clientId: string, limit = 5): Prom
   return (data ?? []) as Session[];
 });
 
+export const getRecentNotesForClient = cache(async (clientId: string, limit = 30): Promise<SessionNote[]> => {
+  const { data: sessions } = await db().database
+    .from("sessions")
+    .select("id")
+    .eq("client_id", clientId)
+    .order("started_at", { ascending: false })
+    .limit(5);
+  const sessionIds = ((sessions ?? []) as { id: string }[]).map((s) => s.id);
+  if (sessionIds.length === 0) return [];
+
+  const { data, error } = await db().database
+    .from("session_notes")
+    .select("*")
+    .in("session_id", sessionIds)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) { console.error("getRecentNotesForClient", error); return []; }
+  return (data ?? []) as SessionNote[];
+});
+
 export const getSessionWithNotes = cache(async (
   sessionId: string
 ): Promise<{ session: Session | null; notes: SessionNote[] }> => {
