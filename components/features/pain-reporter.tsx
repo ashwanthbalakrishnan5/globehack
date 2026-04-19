@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, startTransition } from "react";
 import dynamic from "next/dynamic";
 import type { BodyViewerHandle, MarkedParts, BodyPartStatus } from "./body-viewer";
 import { BODY_PARTS } from "./body-viewer";
@@ -45,8 +45,10 @@ export function PainReporter({ onChange, markedParts: controlled }: PainReporter
     } else {
       next[id] = mode as BodyPartStatus;
     }
-    if (controlled === undefined) setInternal(next);
-    onChange?.(next);
+    startTransition(() => {
+      if (controlled === undefined) setInternal(next);
+      onChange?.(next);
+    });
   }, [mode, onChange, controlled, internal]);
 
   const handleHover = useCallback((id: string | null) => {
