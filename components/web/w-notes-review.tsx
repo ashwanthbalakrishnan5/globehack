@@ -2,9 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BioGrid, Tag, TideMark } from "@/components/primitives";
+import { BioGrid, LoadingButton, Tag, TideMark } from "@/components/primitives";
 import { useSession } from "@/lib/store";
 import { WHeader, WShell } from "./shell";
 
@@ -80,10 +79,11 @@ export function WNotesReview() {
             >
               Discard all
             </button>
-            <button
+            <LoadingButton
               onClick={onFire}
-              type="button"
-              disabled={firing}
+              pending={firing}
+              pendingLabel="Firing summary…"
+              spinnerSize={12}
               style={{
                 height: 38,
                 padding: "0 18px",
@@ -93,17 +93,10 @@ export function WNotesReview() {
                 border: "none",
                 fontSize: 12,
                 fontWeight: 600,
-                fontFamily: "var(--sans)",
-                cursor: firing ? "wait" : "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                opacity: firing ? 0.85 : 1,
               }}
             >
-              {firing && <Loader2 size={12} className="animate-spin" />}
-              {firing ? "Firing..." : "Save & fire summary card"}
-            </button>
+              Save &amp; fire summary card
+            </LoadingButton>
           </div>
         }
       />

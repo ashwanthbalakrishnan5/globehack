@@ -3,10 +3,10 @@
 import { useEffect, useState, useCallback, useTransition } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { subscribeChannel } from "@/lib/realtime";
 import { useSession } from "@/lib/store";
 import { SyncOverlay } from "@/components/sync-overlay";
+import { LoadingButton } from "@/components/primitives";
 
 export function WCheckinQR({ practitionerId }: { practitionerId?: string }) {
   const [tokenUrl, setTokenUrl] = useState<string | null>(null);
@@ -119,9 +119,12 @@ export function WCheckinQR({ practitionerId }: { practitionerId?: string }) {
         refreshes every 4 min · valid once
       </div>
       {process.env.NODE_ENV === "development" && (
-        <button
+        <LoadingButton
           onClick={handleSimulate}
-          disabled={pending || synced}
+          pending={pending}
+          pendingLabel="pairing…"
+          disabled={synced}
+          spinnerSize={10}
           style={{
             height: 28,
             padding: "0 14px",
@@ -131,17 +134,11 @@ export function WCheckinQR({ practitionerId }: { practitionerId?: string }) {
             border: "1px solid var(--ink-4)",
             fontSize: 10,
             fontFamily: "var(--mono)",
-            cursor: pending || synced ? "wait" : "pointer",
             letterSpacing: 0.5,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            opacity: pending || synced ? 0.75 : 1,
           }}
         >
-          {pending && <Loader2 size={10} className="animate-spin" />}
-          {pending ? "pairing..." : "dev · simulate check-in"}
-        </button>
+          dev · simulate check-in
+        </LoadingButton>
       )}
       <SyncOverlay show={synced} name={practitionerName} />
     </div>

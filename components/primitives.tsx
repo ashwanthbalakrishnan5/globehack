@@ -1,6 +1,7 @@
 "use client";
 
-import { CSSProperties, ReactNode } from "react";
+import { ButtonHTMLAttributes, CSSProperties, ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 
 /* ──────────────────────────────────────────────────────────────
    Shared primitives for Tide designs.
@@ -350,6 +351,48 @@ export function HRVSpark({
         return <circle key={i} cx={x} cy={y} r={1.8} fill={color} />;
       })}
     </svg>
+  );
+}
+
+type LoadingButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  pending?: boolean;
+  pendingLabel?: string;
+  icon?: ReactNode;
+  spinnerSize?: number;
+};
+
+export function LoadingButton({
+  pending = false,
+  pendingLabel,
+  icon,
+  spinnerSize = 14,
+  children,
+  disabled,
+  style,
+  ...rest
+}: LoadingButtonProps) {
+  return (
+    <button
+      type={rest.type ?? "button"}
+      {...rest}
+      disabled={disabled || pending}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        cursor: pending || disabled ? "wait" : "pointer",
+        opacity: pending ? 0.85 : 1,
+        transition: "opacity 0.15s ease",
+        fontFamily: "var(--sans)",
+        ...style,
+      }}
+    >
+      {pending ? <Loader2 size={spinnerSize} className="animate-spin" /> : icon}
+      <span style={{ display: "inline-flex", alignItems: "center" }}>
+        {pending && pendingLabel ? pendingLabel : children}
+      </span>
+    </button>
   );
 }
 

@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { memo, useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Meter, Tag, VoiceWave, WavePath } from "@/components/primitives";
+import { LoadingButton, Meter, Tag, VoiceWave, WavePath } from "@/components/primitives";
 import { WShell } from "./shell";
 import { subscribeChannel } from "@/lib/realtime";
 import { useBodyState } from "@/lib/body-state";
@@ -44,12 +44,73 @@ function fmt(s: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
+const NoteRow = memo(function NoteRow({ note }: { note: SessionNote }) {
+  const n = note;
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: n.speaker === "maya" ? -16 : 16 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ type: "spring", stiffness: 260, damping: 24 }}
+      style={{
+        display: "flex",
+        gap: 14,
+        alignItems: "flex-start",
+        padding: "10px 14px",
+        background: n.flagged ? "rgba(212,244,90,0.06)" : "transparent",
+        border: n.flagged ? "1px solid rgba(212,244,90,0.2)" : "1px solid transparent",
+        borderRadius: 10,
+      }}
+    >
+      <div style={{ width: 70, flexShrink: 0 }}>
+        <div
+          className="mono upper"
+          style={{ fontSize: 9, color: n.speaker === "maya" ? "var(--fog-3)" : "var(--signal)" }}
+        >
+          {n.speaker === "maya" ? "MAYA" : "MARCUS"}
+        </div>
+        <div className="mono tnum" style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 2 }}>
+          {fmt(Math.round(n.start_sec ?? 0))}
+        </div>
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 14, color: "var(--fog-0)", lineHeight: 1.4 }}>
+          {n.quote ? (
+            <>
+              {n.text.split(n.quote)[0]}
+              <span
+                style={{
+                  background: "rgba(212,244,90,0.22)",
+                  color: "var(--signal)",
+                  padding: "1px 3px",
+                  borderRadius: 2,
+                }}
+              >
+                {n.quote}
+              </span>
+              {n.text.split(n.quote)[1]}
+            </>
+          ) : (
+            n.text
+          )}
+        </div>
+        {n.flagged && (
+          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+            <Tag color="var(--signal)">{n.note_type}</Tag>
+            <Tag color="var(--fog-3)">→ auto-note</Tag>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+});
+
 export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
   const router = useRouter();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [notes, setNotes] = useState<SessionNote[]>(initialNotes);
   const [useFallback, setUseFallback] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [startingSession, setStartingSession] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [endingSession, setEndingSession] = useState(false);
   const fallbackSegs = useRef<FallbackSegment[]>([]);
@@ -127,23 +188,28 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
 
   const handleStart = useCallback(async () => {
     const audio = audioRef.current;
-    if (!audio || isPlaying) return;
+    if (!audio || isPlaying || startingSession) return;
     bodyBeforeRef.current = { ...zones };
-    setIsPlaying(true);
-    audio.play().catch(console.error);
+    setStartingSession(true);
 
-    // Start 6s fallback timer
     fallbackTimer.current = setTimeout(() => {
       if (receivedCount.current < 2) setUseFallback(true);
     }, 6000);
 
-    // Call transcription pipeline (non-blocking)
     fetch(`/api/session/${sessionId}/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ audioUrl: `${window.location.origin}/demo-session.mp3` }),
     }).catch(console.error);
-  }, [sessionId, isPlaying]);
+
+    try {
+      await audio.play();
+    } catch (e) {
+      console.error(e);
+    }
+    setIsPlaying(true);
+    setStartingSession(false);
+  }, [sessionId, isPlaying, startingSession, zones]);
 
   const handleEndReview = useCallback(async () => {
     if (endingSession) return;
@@ -209,22 +275,22 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
         </span>
         <div style={{ width: 1, height: 16, background: "var(--ink-3)" }} />
         {!isPlaying ? (
-          <button
+          <LoadingButton
             onClick={handleStart}
+            pending={startingSession}
+            pendingLabel="Connecting to ElevenLabs…"
             style={{
               fontSize: 12,
               color: "var(--signal-ink)",
-              fontFamily: "var(--sans)",
               fontWeight: 600,
               padding: "6px 14px",
               borderRadius: 8,
               background: "var(--signal)",
               border: "none",
-              cursor: "pointer",
             }}
           >
             ▶ Start session
-          </button>
+          </LoadingButton>
         ) : (
           <span className="mono" style={{ fontSize: 10, color: "var(--fog-2)" }}>
             listening
@@ -246,24 +312,22 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
         >
           resonance map →
         </Link>
-        <button
+        <LoadingButton
           onClick={handleEndReview}
-          disabled={endingSession}
+          pending={endingSession}
+          pendingLabel="Saving…"
           style={{
             fontSize: 12,
             color: "var(--signal-ink)",
-            fontFamily: "var(--sans)",
             fontWeight: 600,
-            textDecoration: "none",
             padding: "6px 12px",
             borderRadius: 8,
             background: endingSession ? "var(--ink-3)" : "var(--signal)",
             border: "none",
-            cursor: endingSession ? "not-allowed" : "pointer",
           }}
         >
-          {endingSession ? "Saving…" : "End & review"}
-        </button>
+          End &amp; review
+        </LoadingButton>
       </div>
 
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 360px", overflow: "hidden" }}>
@@ -278,64 +342,7 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
 
           <AnimatePresence initial={false}>
             {notes.map((n, i) => (
-              <motion.div
-                key={n.id ?? i}
-                initial={{ opacity: 0, x: n.speaker === "maya" ? -16 : 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                style={{
-                  display: "flex",
-                  gap: 14,
-                  alignItems: "flex-start",
-                  padding: "10px 14px",
-                  background: n.flagged ? "rgba(212,244,90,0.06)" : "transparent",
-                  border: n.flagged ? "1px solid rgba(212,244,90,0.2)" : "1px solid transparent",
-                  borderRadius: 10,
-                }}
-              >
-                <div style={{ width: 70, flexShrink: 0 }}>
-                  <div
-                    className="mono upper"
-                    style={{
-                      fontSize: 9,
-                      color: n.speaker === "maya" ? "var(--fog-3)" : "var(--signal)",
-                    }}
-                  >
-                    {n.speaker === "maya" ? "MAYA" : "MARCUS"}
-                  </div>
-                  <div className="mono tnum" style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 2 }}>
-                    {fmt(Math.round(n.start_sec ?? 0))}
-                  </div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, color: "var(--fog-0)", lineHeight: 1.4 }}>
-                    {n.quote ? (
-                      <>
-                        {n.text.split(n.quote)[0]}
-                        <span
-                          style={{
-                            background: "rgba(212,244,90,0.22)",
-                            color: "var(--signal)",
-                            padding: "1px 3px",
-                            borderRadius: 2,
-                          }}
-                        >
-                          {n.quote}
-                        </span>
-                        {n.text.split(n.quote)[1]}
-                      </>
-                    ) : (
-                      n.text
-                    )}
-                  </div>
-                  {n.flagged && (
-                    <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                      <Tag color="var(--signal)">{n.note_type}</Tag>
-                      <Tag color="var(--fog-3)">→ auto-note</Tag>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
+              <NoteRow key={n.id ?? i} note={n} />
             ))}
           </AnimatePresence>
 

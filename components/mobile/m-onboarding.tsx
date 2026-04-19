@@ -2,9 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
 import { MScreen } from "./shell";
-import { TideMark } from "@/components/primitives";
+import { LoadingButton, TideMark } from "@/components/primitives";
 
 const PERMS = [
   { label: "Heart rate", detail: "resting + variability", on: true },
@@ -115,10 +114,12 @@ export function MOnboarding() {
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ padding: "0 0 32px" }}>
-          <button
-            type="button"
+          <LoadingButton
             onClick={handleGrant}
-            disabled={pending || granted}
+            pending={pending}
+            pendingLabel="Sending signals…"
+            disabled={granted}
+            spinnerSize={16}
             style={{
               width: "100%",
               height: 54,
@@ -128,20 +129,12 @@ export function MOnboarding() {
               border: "none",
               fontSize: 16,
               fontWeight: 600,
-              fontFamily: "var(--sans)",
               boxShadow: "var(--glow-signal)",
               letterSpacing: -0.2,
-              cursor: pending || granted ? "wait" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              opacity: pending ? 0.85 : 1,
             }}
           >
-            {pending && <Loader2 size={16} className="animate-spin" />}
-            {pending ? "Sending signals..." : granted ? "Signals received ✓" : "Grant Health Connect access"}
-          </button>
+            {granted ? "Signals received ✓" : "Grant Health Connect access"}
+          </LoadingButton>
           <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)", textAlign: "center", marginTop: 14 }}>
             Session-scoped · revocable · never central
           </div>

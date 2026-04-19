@@ -3,10 +3,9 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MScreen } from "./shell";
-import { Meter } from "@/components/primitives";
+import { LoadingButton, Meter } from "@/components/primitives";
 import type { SummaryCard } from "@/lib/types";
 
 const BodyViewer = dynamic(() => import("@/components/features/body-viewer"), {
@@ -261,10 +260,11 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ paddingBottom: 32, display: "flex", gap: 8 }}>
-          <button
-            type="button"
+          <LoadingButton
             onClick={handleShare}
-            disabled={sharing}
+            pending={sharing}
+            pendingLabel="Rendering card…"
+            spinnerSize={16}
             style={{
               flex: 1,
               height: 52,
@@ -274,19 +274,11 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
               border: "none",
               fontSize: 15,
               fontWeight: 600,
-              fontFamily: "var(--sans)",
               boxShadow: "var(--glow-signal)",
-              cursor: sharing ? "wait" : "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              opacity: sharing ? 0.85 : 1,
             }}
           >
-            {sharing && <Loader2 size={16} className="animate-spin" />}
-            {sharing ? "Rendering card..." : "Share card"}
-          </button>
+            Share card
+          </LoadingButton>
           <button
             type="button"
             onClick={() => setLiked((v) => !v)}

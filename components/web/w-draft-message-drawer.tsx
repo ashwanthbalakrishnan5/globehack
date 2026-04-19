@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LoadingButton } from "@/components/primitives";
 import { draftMessage } from "@/lib/draft-message";
 import type { Flag } from "@/lib/types";
 
@@ -12,23 +13,36 @@ interface Props {
 
 export function WDraftMessageDrawer({ flag, onClose }: Props) {
   const [copied, setCopied] = useState(false);
+  const [copying, startCopy] = useTransition();
   const [contacted, setContacted] = useState(false);
+  const [contacting, startContact] = useTransition();
 
   const draft = flag ? draftMessage({ name: flag.clientName }, flag) : null;
 
   const handleCopy = () => {
     if (!draft) return;
-    navigator.clipboard.writeText(`${draft.subject}\n\n${draft.body}`).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    startCopy(async () => {
+      try {
+        await navigator.clipboard.writeText(`${draft.subject}\n\n${draft.body}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (e) {
+        console.error(e);
+      }
     });
   };
 
-  const handleContacted = async () => {
+  const handleContacted = () => {
     if (!flag) return;
-    await fetch(`/api/flags/${flag.id}`, { method: "PATCH" }).catch(console.error);
-    setContacted(true);
-    setTimeout(() => { setContacted(false); onClose(); }, 1200);
+    startContact(async () => {
+      try {
+        await fetch(`/api/flags/${flag.id}`, { method: "PATCH" });
+      } catch (e) {
+        console.error(e);
+      }
+      setContacted(true);
+      setTimeout(() => { setContacted(false); onClose(); }, 1200);
+    });
   };
 
   return (
@@ -163,8 +177,11 @@ export function WDraftMessageDrawer({ flag, onClose }: Props) {
               }}
             >
               <div style={{ display: "flex", gap: 8 }}>
-                <button
+                <LoadingButton
                   onClick={handleCopy}
+                  pending={copying}
+                  pendingLabel="Copying…"
+                  spinnerSize={12}
                   style={{
                     flex: 1,
                     height: 44,
@@ -174,13 +191,11 @@ export function WDraftMessageDrawer({ flag, onClose }: Props) {
                     border: "none",
                     fontSize: 13,
                     fontWeight: 600,
-                    fontFamily: "var(--sans)",
-                    cursor: "pointer",
                     transition: "background 0.2s",
                   }}
                 >
-                  {copied ? "Copied" : "Copy"}
-                </button>
+                  {copied ? "Copied ✓" : "Copy"}
+                </LoadingButton>
                 {draft && (
                   <a
                     href={`mailto:?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`}
@@ -202,8 +217,11 @@ export function WDraftMessageDrawer({ flag, onClose }: Props) {
                   </a>
                 )}
               </div>
-              <button
+              <LoadingButton
                 onClick={handleContacted}
+                pending={contacting}
+                pendingLabel="Sending…"
+                spinnerSize={12}
                 style={{
                   height: 36,
                   borderRadius: 8,
@@ -211,13 +229,11 @@ export function WDraftMessageDrawer({ flag, onClose }: Props) {
                   border: "1px solid var(--ink-3)",
                   color: contacted ? "var(--signal)" : "var(--fog-2)",
                   fontSize: 12,
-                  fontFamily: "var(--sans)",
-                  cursor: "pointer",
                   transition: "color 0.2s",
                 }}
               >
-                {contacted ? "Marked as contacted" : "Mark as contacted"}
-              </button>
+                {contacted ? "Marked as contacted ✓" : "Mark as contacted"}
+              </LoadingButton>
             </div>
           </motion.div>
         </>
