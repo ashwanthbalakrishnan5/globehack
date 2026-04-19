@@ -43,6 +43,8 @@ const HEALTH_CONNECT_PREFILL: Record<string, MarkedParts> = {
     left_knee: "pain",
     lower_back: "pain",
     neck: "pain",
+    left_shoulder: "recovered",
+    right_shoulder: "recovered",
   },
 };
 
