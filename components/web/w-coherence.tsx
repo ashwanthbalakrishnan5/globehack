@@ -9,7 +9,7 @@ export function WCoherence() {
     <WShell pageName="live">
       <WHeader
         title="Between-session practice"
-        sub="Jordan's last 7 days of guided breathwork"
+        sub="Marcus's last 7 days of guided breathwork"
         right={<Tag color="var(--signal)" variant="solid">4 of 5 days hit</Tag>}
       />
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 360px", overflow: "hidden" }}>
@@ -36,8 +36,8 @@ export function WCoherence() {
               lineHeight: 1.5,
             }}
           >
-            Jordan practiced for 4 minutes before bed. Coherence stabilised at{" "}
-            <span style={{ color: "var(--signal)" }}>78</span> &mdash; her highest this month.
+            Marcus practiced for 4 minutes before bed. Coherence stabilised at{" "}
+            <span style={{ color: "var(--signal)" }}>78</span> &mdash; his highest this month.
           </div>
         </div>
         <div

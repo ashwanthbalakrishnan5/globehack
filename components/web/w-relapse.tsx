@@ -1,56 +1,54 @@
 "use client";
 
+import { useState } from "react";
 import { HRVSpark, Tag } from "@/components/primitives";
 import { StatBlock, WHeader, WShell } from "./shell";
+import { WDraftMessageDrawer } from "./w-draft-message-drawer";
+import type { Flag } from "@/lib/types";
 
-type Severity = "low" | "medium" | "high";
+const DEMO_FLAGS: Flag[] = [
+  {
+    id: "flag-jessica",
+    clientId: "jessica-park",
+    clientName: "Jessica Park",
+    severity: "high",
+    reason: "HRV down 14% over 8 days, pain flagged in last session, 18 days since visit.",
+    signals: ["HRV ↓ 14% · 8 days", '"shoulder still locked" · apr 1', "18d since visit"],
+    lastVisit: "Apr 1",
+    hrvTrend: [62, 60, 58, 56, 54, 52, 50, 48],
+  },
+  {
+    id: "flag-marcus",
+    clientId: "marcus-rivera",
+    clientName: "Marcus Rivera",
+    severity: "low",
+    reason: "HRV trending down for 5 days.",
+    signals: ["HRV ↓ 8% · 5 days"],
+    lastVisit: "Apr 11",
+    hrvTrend: [70, 69, 66, 65, 64, 63, 62, 62],
+  },
+];
 
-export function WRelapseFlag() {
-  const flags: {
-    name: string;
-    severity: Severity;
-    reason: string;
-    signals: string[];
-    lastVisit: string;
-    hrvTrend: number[];
-  }[] = [
-    {
-      name: "Jessica Park",
-      severity: "high",
-      reason: "HRV down 14% over 8 days, pain flagged in last session, 18 days since visit.",
-      signals: ["HRV ↓ 14% · 8 days", '"shoulder still locked" · apr 1', "18d since visit"],
-      lastVisit: "Apr 1",
-      hrvTrend: [62, 60, 58, 56, 54, 52, 50, 48],
-    },
-    {
-      name: "Devon Park",
-      severity: "medium",
-      reason: "First visit in 6 weeks. Sleep score trending down.",
-      signals: ["42 days since visit", "sleep score 58 · last 5 nights"],
-      lastVisit: "Mar 6",
-      hrvTrend: [68, 66, 67, 64, 62, 60, 61, 58],
-    },
-    {
-      name: "Marcus Rivera",
-      severity: "low",
-      reason: "HRV trending down for 5 days.",
-      signals: ["HRV ↓ 8% · 5 days"],
-      lastVisit: "Apr 11",
-      hrvTrend: [70, 69, 66, 65, 64, 63, 62, 62],
-    },
-  ];
+const badgeColor = (s: string) =>
+  s === "high" ? "var(--flare)" : s === "medium" ? "var(--spark)" : "var(--cool)";
 
-  const badgeColor = (s: Severity) =>
-    s === "high" ? "var(--flare)" : s === "medium" ? "var(--spark)" : "var(--cool)";
+export function WRelapseFlag({ liveFlags }: { liveFlags?: Flag[] }) {
+  const [activeFlag, setActiveFlag] = useState<Flag | null>(null);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+
+  const flags = (liveFlags && liveFlags.length > 0 ? liveFlags : DEMO_FLAGS).filter(
+    (f) => !dismissed.has(f.id)
+  );
 
   return (
     <WShell pageName="relapse">
+      <WDraftMessageDrawer flag={activeFlag} onClose={() => setActiveFlag(null)} />
       <WHeader
         title="Relapse flags"
         sub="post-session intelligence · practitioner decides"
         right={
           <div style={{ display: "flex", gap: 24 }}>
-            <StatBlock value="3" label="flagged" color="var(--flare)" />
+            <StatBlock value={String(flags.length)} label="flagged" color="var(--flare)" />
             <StatBlock value="1.2w" label="avg rebook lift" color="var(--signal)" />
             <StatBlock value="68%" label="outreach → book" trend="+22 pts" />
           </div>
@@ -61,9 +59,9 @@ export function WRelapseFlag() {
           flags this week · sorted by severity
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {flags.map((f, i) => (
+          {flags.map((f) => (
             <div
-              key={i}
+              key={f.id}
               style={{
                 padding: 20,
                 borderRadius: 16,
@@ -98,12 +96,12 @@ export function WRelapseFlag() {
               >
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                    <span style={{ fontSize: 18, color: "var(--fog-0)", fontWeight: 500 }}>{f.name}</span>
+                    <span style={{ fontSize: 18, color: "var(--fog-0)", fontWeight: 500 }}>{f.clientName}</span>
                     <Tag color={badgeColor(f.severity)} variant="solid">
                       {f.severity}
                     </Tag>
                     <span className="mono" style={{ fontSize: 10, color: "var(--fog-3)" }}>
-                      last · {f.lastVisit}
+                      last · {f.lastVisit ?? "unknown"}
                     </span>
                   </div>
                   <div className="serif" style={{ fontSize: 16, color: "var(--fog-0)", fontStyle: "italic" }}>
@@ -137,6 +135,7 @@ export function WRelapseFlag() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <button
+                    onClick={() => setActiveFlag(f)}
                     style={{
                       height: 40,
                       borderRadius: 10,
@@ -152,6 +151,7 @@ export function WRelapseFlag() {
                     Draft message
                   </button>
                   <button
+                    onClick={() => setDismissed((prev) => new Set([...prev, f.id]))}
                     style={{
                       height: 32,
                       borderRadius: 8,

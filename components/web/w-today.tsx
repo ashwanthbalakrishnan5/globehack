@@ -3,16 +3,27 @@
 import Link from "next/link";
 import { StatBlock, WHeader, WShell } from "./shell";
 import { RingGauge, Tag, WavePath } from "@/components/primitives";
+import { WCheckinQR } from "./w-checkin-qr";
+import type { Slot, Flag } from "@/lib/types";
 
-export function WToday() {
-  const slots = [
-    { t: "9:00", id: "devon-park", name: "Devon Park", tag: "returning · 4th", readiness: 78, protocol: "Recovery · warm", state: "done" as const, flag: false },
-    { t: "10:15", id: "alina-zhou", name: "Alina Zhou", tag: "new · first", readiness: 92, protocol: "Baseline scan", state: "done" as const, flag: false },
-    { t: "11:30", id: "jordan-kim", name: "Jordan Kim", tag: "returning · 7th", readiness: 54, protocol: "Parasympathetic · 40Hz", state: "now" as const, flag: false },
-    { t: "2:00", id: "priya-shah", name: "Priya Shah", tag: "returning · 2nd", readiness: 81, protocol: "Mobility · asymmetry", state: "soon" as const, flag: false },
-    { t: "3:30", id: "devon-park", name: "Devon Park", tag: "returning · 5th", readiness: 68, protocol: "Recovery · cool", state: "soon" as const, flag: false },
-    { t: "5:00", id: "lee-tran", name: "Lee Tran", tag: "returning · 3rd", readiness: 67, protocol: "Standard", state: "soon" as const, flag: false },
-  ];
+const FALLBACK_SLOTS = [
+  { t: "9:00", id: "sarah-chen", name: "Sarah Chen", tag: "returning · 4th", readiness: 82, protocol: "Standard Balance", state: "done" as const, flag: false },
+  { t: "10:15", id: "alina-zhou", name: "Alina Zhou", tag: "new · first", readiness: 92, protocol: "Baseline scan", state: "done" as const, flag: false },
+  { t: "11:30", id: "marcus-rivera", name: "Marcus Rivera", tag: "returning · 7th", readiness: 54, protocol: "Parasympathetic · 40Hz", state: "now" as const, flag: false },
+  { t: "2:00", id: "priya-shah", name: "Priya Shah", tag: "returning · 2nd", readiness: 81, protocol: "Mobility · asymmetry", state: "soon" as const, flag: false },
+  { t: "3:30", id: "sarah-chen", name: "Sarah Chen", tag: "returning · 5th", readiness: 68, protocol: "Recovery · cool", state: "soon" as const, flag: false },
+  { t: "5:00", id: "lee-tran", name: "Lee Tran", tag: "returning · 3rd", readiness: 67, protocol: "Standard", state: "soon" as const, flag: false },
+];
+
+export function WToday({ liveSlots, liveFlags }: { liveSlots?: Slot[]; liveFlags?: Flag[] }) {
+  const merged = liveSlots && liveSlots.length > 0
+    ? FALLBACK_SLOTS.map((s) => {
+        const live = liveSlots.find((l) => l.clientId === s.id);
+        if (!live) return s;
+        return { ...s, name: live.clientName, tag: live.tag, readiness: live.readiness, protocol: live.protocol, state: live.state };
+      })
+    : FALLBACK_SLOTS;
+  const slots = merged;
   return (
     <WShell pageName="today">
       <WHeader
@@ -35,7 +46,7 @@ export function WToday() {
             {slots.map((s, i) => (
               <Link
                 key={i}
-                href={s.id === "jordan-kim" ? `/practitioner/session/${s.id}` : `/practitioner/clients/${s.id}`}
+                href={s.id === "marcus-rivera" ? `/practitioner/session/${s.id}` : `/practitioner/clients/${s.id}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -120,6 +131,9 @@ export function WToday() {
             background: "var(--ink-1)",
           }}
         >
+          <div style={{ marginBottom: 20 }}>
+            <WCheckinQR />
+          </div>
           <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)", marginBottom: 14 }}>
             Day pulse
           </div>
@@ -142,10 +156,13 @@ export function WToday() {
             attention
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[
-              { who: "Devon Park", why: "first visit in 6 weeks", kind: "warn" as const },
-              { who: "Jordan Kim", why: "low readiness — 54", kind: "warn" as const },
-            ].map((a, i) => (
+            {(liveFlags && liveFlags.length > 0
+              ? liveFlags.map((f) => ({ who: f.clientName, why: f.reason.slice(0, 48) }))
+              : [
+                  { who: "Jessica Park", why: "HRV declining, 21 days since last visit" },
+                  { who: "Marcus Rivera", why: "low readiness — 54" },
+                ]
+            ).map((a, i) => (
               <div
                 key={i}
                 style={{

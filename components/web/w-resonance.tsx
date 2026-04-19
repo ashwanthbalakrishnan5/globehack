@@ -8,7 +8,7 @@ export function WResonanceMap() {
   return (
     <WShell pageName="live">
       <WHeader
-        title="Resonance Map · Jordan Kim"
+        title="Resonance Map · Marcus Rivera"
         sub="live · session 07 · t + 14:22 · 40Hz lymphatic"
         right={
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>

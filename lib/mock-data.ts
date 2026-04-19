@@ -1,4 +1,4 @@
-/* Demo-grade mock data. Would be backed by Insforge in production. */
+/* Fallback mock data. Only used when Insforge reads fail. Do not extend. */
 
 export type Severity = "low" | "medium" | "high";
 
@@ -53,55 +53,59 @@ export const PRACTITIONER = {
 
 export const CLIENTS: Client[] = [
   {
-    id: "jordan-kim",
-    name: "Jordan Kim",
-    initials: "JK",
+    id: "marcus-rivera",
+    name: "Marcus Rivera",
+    initials: "MR",
     age: 34,
     profile: "endurance athlete",
-    pairedOn: "6 weeks ago",
+    pairedOn: "6 months ago",
     sessionCount: 7,
-    nextBookedOn: "Apr 24",
+    nextBookedOn: "Apr 18",
     latest: {
-      hrvMs: 54,
+      hrvMs: 50,
       hrvTrendPct: -18,
-      restingHrBpm: 64,
-      restingHrDelta: 6,
+      restingHrBpm: 66,
+      restingHrDelta: 8,
       sleepLabel: "5:42",
       sleepPct: 55,
     },
-    hrvTrend14: [72, 70, 68, 66, 62, 58, 60, 56, 54, 52, 55, 53, 50, 54],
+    hrvTrend14: [72, 70, 68, 65, 63, 67, 62, 60, 58, 55, 58, 54, 52, 50],
     priorNotes: [
-      { date: "apr 10", quote: "hip feels locked up since the half-marathon" },
-      { date: "apr 03", quote: "left trap been bothering me for a week" },
+      { date: "apr 11", quote: "Left trap is worse this week, honestly" },
+      { date: "mar 24", quote: "left trap is a bit tight" },
     ],
     recurringThemes: [
       { t: "left trap", n: 4 },
-      { t: "low back", n: 3 },
       { t: "sleep quality", n: 3 },
-      { t: "hip flexor (R)", n: 2 },
+      { t: "low back", n: 2 },
       { t: "post-race recovery", n: 2 },
     ],
   },
   {
-    id: "devon-park",
-    name: "Devon Park",
-    initials: "DP",
+    id: "sarah-chen",
+    name: "Sarah Chen",
+    initials: "SC",
     age: 41,
-    profile: "first visit in 6 weeks",
-    pairedOn: "2 months ago",
-    sessionCount: 4,
-    nextBookedOn: null,
+    profile: "returning after 6-week break",
+    pairedOn: "7 months ago",
+    sessionCount: 5,
+    nextBookedOn: "Apr 18",
     latest: {
-      hrvMs: 61,
-      hrvTrendPct: -4,
-      restingHrBpm: 62,
-      restingHrDelta: 2,
-      sleepLabel: "6:40",
-      sleepPct: 68,
+      hrvMs: 65,
+      hrvTrendPct: -2,
+      restingHrBpm: 57,
+      restingHrDelta: 0,
+      sleepLabel: "7:10",
+      sleepPct: 82,
     },
-    hrvTrend14: [68, 66, 67, 64, 62, 60, 61, 58, 60, 62, 63, 61, 62, 60],
-    priorNotes: [],
-    recurringThemes: [],
+    hrvTrend14: [64, 66, 65, 63, 67, 65, 64, 66, 65, 63, 66, 65, 64, 65],
+    priorNotes: [
+      { date: "mar 29", quote: "I feel more centered after each session" },
+    ],
+    recurringThemes: [
+      { t: "stress", n: 2 },
+      { t: "shoulder", n: 1 },
+    ],
   },
   {
     id: "jessica-park",
@@ -127,10 +131,10 @@ export const CLIENTS: Client[] = [
 ];
 
 export const TODAY_SLOTS: Slot[] = [
-  { time: "9:00", clientId: "devon-park", tag: "returning · 4th", readiness: 78, protocol: "Recovery · warm", state: "done" },
+  { time: "9:00", clientId: "sarah-chen", tag: "returning · 4th", readiness: 82, protocol: "Standard Balance", state: "done" },
   { time: "10:15", clientId: "jessica-park", tag: "returning · 11th", readiness: 56, protocol: "Shoulder asymmetry", state: "done" },
-  { time: "11:30", clientId: "jordan-kim", tag: "returning · 7th", readiness: 54, protocol: "Parasympathetic · 40Hz", state: "now" },
-  { time: "2:00", clientId: "devon-park", tag: "returning · 5th", readiness: 68, protocol: "Recovery · cool", state: "soon" },
+  { time: "11:30", clientId: "marcus-rivera", tag: "returning · 7th", readiness: 54, protocol: "Parasympathetic · 40Hz", state: "now" },
+  { time: "2:00", clientId: "sarah-chen", tag: "returning · 5th", readiness: 68, protocol: "Recovery · cool", state: "soon" },
 ];
 
 export const RELAPSE_FLAGS: Flag[] = [
@@ -143,17 +147,9 @@ export const RELAPSE_FLAGS: Flag[] = [
     lastVisit: "Apr 1",
     hrvTrend: [62, 60, 58, 56, 54, 52, 50, 48],
   },
-  {
-    clientId: "devon-park",
-    severity: "medium",
-    reason: "Sleep score trending down. First visit in 6 weeks.",
-    signals: ["42 days since visit", "sleep score 58 · last 5 nights"],
-    lastVisit: "Mar 6",
-    hrvTrend: [68, 66, 67, 64, 62, 60, 61, 58],
-  },
 ];
 
-export const ACTIVE_CLIENT_ID = "jordan-kim";
+export const ACTIVE_CLIENT_ID = "marcus-rivera";
 
 export function getClient(id: string): Client | undefined {
   return CLIENTS.find((c) => c.id === id);

@@ -1,38 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { MCheckIn } from "@/components/mobile/m-checkin";
 import { useSession } from "@/lib/store";
-import { ACTIVE_CLIENT_ID } from "@/lib/mock-data";
 
-export default function Page() {
+function CheckinHandler() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const token = searchParams.get("token");
   const phase = useSession((s) => s.phase);
   const summaryReady = useSession((s) => s.summaryReady);
   const startCheckIn = useSession((s) => s.startCheckIn);
 
   useEffect(() => {
-    if (phase === "idle") {
-      startCheckIn(ACTIVE_CLIENT_ID, "session-07");
+    if (token && phase === "idle") {
+      const clientId = process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
+      fetch("/api/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, clientId }),
+      })
+        .then((r) => r.json())
+        .then(({ sessionId }) => {
+          if (sessionId) startCheckIn(clientId, sessionId, "qr");
+        })
+        .catch(console.error);
+    } else if (!token && phase === "idle") {
+      startCheckIn(
+        process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera",
+        `session-${Date.now()}`,
+        "simulated"
+      );
     }
-  }, [phase, startCheckIn]);
+  }, [token, phase, startCheckIn]);
 
-  if (summaryReady) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-        <MCheckIn />
-        <AutoRedirect to="/client/summary" />
-      </div>
-    );
-  }
-  if (phase === "live" || phase === "review") {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-        <MCheckIn />
-        <AutoRedirect to="/client/session" />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (summaryReady) router.push("/client/summary");
+    else if (phase === "live" || phase === "review") router.push("/client/session");
+  }, [summaryReady, phase, router]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <MCheckIn />
@@ -87,12 +95,10 @@ export default function Page() {
   );
 }
 
-function AutoRedirect({ to }: { to: string }) {
-  useEffect(() => {
-    const t = setTimeout(() => {
-      window.location.href = to;
-    }, 600);
-    return () => clearTimeout(t);
-  }, [to]);
-  return null;
+export default function Page() {
+  return (
+    <Suspense fallback={<MCheckIn />}>
+      <CheckinHandler />
+    </Suspense>
+  );
 }

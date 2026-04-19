@@ -56,7 +56,7 @@ export function WLiveSession() {
           }}
         />
         <span className="mono upper" style={{ fontSize: 10, color: "var(--signal)" }}>
-          Live · Jordan Kim · Bay 3
+          Live · Marcus Rivera · Bay 3
         </span>
         <span style={{ flex: 1 }} />
         <span className="mono tnum" style={{ fontSize: 14, color: "var(--fog-0)" }}>
@@ -68,7 +68,7 @@ export function WLiveSession() {
         </span>
         <div style={{ width: 1, height: 16, background: "var(--ink-3)" }} />
         <Link
-          href="/practitioner/session/jordan-kim/resonance"
+          href="/practitioner/session/marcus-rivera/resonance"
           className="mono upper"
           style={{
             fontSize: 10,
@@ -83,7 +83,7 @@ export function WLiveSession() {
           resonance map →
         </Link>
         <Link
-          href="/practitioner/session/jordan-kim/notes"
+          href="/practitioner/session/marcus-rivera/notes"
           style={{
             fontSize: 12,
             color: "var(--signal-ink)",
@@ -125,7 +125,7 @@ export function WLiveSession() {
                     color: t.speaker === "you" ? "var(--fog-3)" : "var(--signal)",
                   }}
                 >
-                  {t.speaker === "you" ? "MAYA" : "JORDAN"}
+                  {t.speaker === "you" ? "MAYA" : "MARCUS"}
                 </div>
                 <div className="mono tnum" style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 2 }}>
                   {t.t}

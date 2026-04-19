@@ -42,7 +42,7 @@ export function WNotesReview() {
   return (
     <WShell pageName="notes">
       <WHeader
-        title="Review · Jordan Kim"
+        title="Review · Marcus Rivera"
         sub="session 07 · 38m · just ended"
         right={
           <div style={{ display: "flex", gap: 8 }}>
@@ -194,7 +194,7 @@ export function WNotesReview() {
           }}
         >
           <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)", marginBottom: 12 }}>
-            card Jordan will see
+            card Marcus will see
           </div>
           <div
             style={{

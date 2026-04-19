@@ -3,8 +3,17 @@
 import Link from "next/link";
 import { MScreen } from "./shell";
 import { Meter } from "@/components/primitives";
+import type { SummaryCard } from "@/lib/types";
 
-export function MSummaryExpanded() {
+interface Props {
+  card?: SummaryCard | null;
+}
+
+export function MSummaryExpanded({ card }: Props) {
+  const quote = card?.quote ?? "Left trap is worse this week.";
+  const durationMin = card?.duration_min ?? 42;
+  const hrvAtSession = card?.hrv_at_session ?? 50;
+
   return (
     <MScreen pt={54}>
       <div style={{ padding: "24px 24px 0", display: "flex", flexDirection: "column", height: "100%" }}>
@@ -29,7 +38,7 @@ export function MSummaryExpanded() {
             ×
           </Link>
           <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)" }}>
-            Session 07 · Apr 17
+            Session · Today
           </div>
           <div
             style={{
@@ -49,7 +58,7 @@ export function MSummaryExpanded() {
         </div>
         <div style={{ marginTop: 36, textAlign: "center", padding: "0 8px" }}>
           <div className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)", marginBottom: 16 }}>
-            ── you said, at minute 14 ──
+            ── you said ──
           </div>
           <div
             className="serif"
@@ -61,7 +70,7 @@ export function MSummaryExpanded() {
               letterSpacing: -0.01,
             }}
           >
-            &ldquo;Left trap is <span style={{ color: "var(--signal)" }}>worse</span> this week.&rdquo;
+            &ldquo;{quote.length > 60 ? quote.slice(0, 60) + "…" : quote}&rdquo;
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "center", marginTop: 20, marginBottom: 8 }}>
@@ -91,7 +100,7 @@ export function MSummaryExpanded() {
                 <span style={{ color: "var(--signal)" }}>↓</span>11
                 <span style={{ fontSize: 13, color: "var(--fog-3)" }}>&nbsp;bpm</span>
               </div>
-              <div style={{ fontSize: 11, color: "var(--fog-2)", marginTop: 2 }}>Heart rate, in 42 min</div>
+              <div style={{ fontSize: 11, color: "var(--fog-2)", marginTop: 2 }}>Heart rate, in {durationMin} min</div>
               <Meter pct={82} color="var(--signal)" delay={0.2} />
             </div>
             <div>
@@ -111,10 +120,10 @@ export function MSummaryExpanded() {
             </div>
             <div>
               <div className="mono tnum" style={{ fontSize: 26, color: "var(--fog-0)", fontWeight: 300 }}>
-                23<span style={{ fontSize: 13, color: "var(--fog-3)" }}>&nbsp;min</span>
+                {hrvAtSession}<span style={{ fontSize: 13, color: "var(--fog-3)" }}>&nbsp;ms</span>
               </div>
-              <div style={{ fontSize: 11, color: "var(--fog-2)", marginTop: 2 }}>Parasympathetic dom.</div>
-              <Meter pct={76} color="var(--cool)" delay={0.8} />
+              <div style={{ fontSize: 11, color: "var(--fog-2)", marginTop: 2 }}>HRV at session</div>
+              <Meter pct={Math.round((hrvAtSession / 100) * 100)} color="var(--cool)" delay={0.8} />
             </div>
           </div>
         </div>

@@ -109,7 +109,7 @@ export function WClientProfile() {
   return (
     <WShell pageName="clients">
       <WHeader
-        title="Jordan Kim"
+        title="Marcus Rivera"
         sub="client · paired 6 weeks · 7 sessions"
         right={
           <div style={{ display: "flex", gap: 24 }}>
@@ -137,9 +137,9 @@ export function WClientProfile() {
               fontWeight: 500,
             }}
           >
-            JK
+            MR
           </div>
-          <div style={{ marginTop: 14, fontSize: 18, color: "var(--fog-0)", fontWeight: 500 }}>Jordan Kim</div>
+          <div style={{ marginTop: 14, fontSize: 18, color: "var(--fog-0)", fontWeight: 500 }}>Marcus Rivera</div>
           <div className="mono" style={{ fontSize: 10, color: "var(--fog-3)", marginTop: 3 }}>
             34 · she/her · austin
           </div>

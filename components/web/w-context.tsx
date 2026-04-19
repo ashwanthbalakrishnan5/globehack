@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { BioGrid, HRVSpark, Tag } from "@/components/primitives";
 import { WShell } from "./shell";
+import type { HealthSnapshot } from "@/lib/types";
 
 function BioCell({
   label,
@@ -112,7 +114,41 @@ function Param({
   );
 }
 
-export function WContext() {
+export function WContext({
+  clientId = "marcus-rivera",
+  clientName = "Marcus Rivera",
+  clientAge = 34,
+  clientProfile = "endurance athlete",
+  snapshots = [],
+  priorNotes = [],
+}: {
+  clientId?: string;
+  clientName?: string;
+  clientAge?: number;
+  clientProfile?: string;
+  snapshots?: HealthSnapshot[];
+  priorNotes?: { date: string; quote: string }[];
+}) {
+  const latest = snapshots[snapshots.length - 1];
+  const earliest = snapshots[0];
+  const initials = clientName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
+  const hrv = latest ? Math.round(Number(latest.hrv_ms)) : 50;
+  const baselineHrv = earliest ? Math.round(Number(earliest.hrv_ms)) : 72;
+  const hrvDelta = baselineHrv > 0 ? Math.round(((hrv - baselineHrv) / baselineHrv) * 100) : 0;
+  const rhr = latest ? latest.resting_hr_bpm : 66;
+  const rhrBaseline = earliest ? earliest.resting_hr_bpm : 58;
+  const rhrDelta = rhr - rhrBaseline;
+  const sleep = latest ? latest.sleep_score : 55;
+  const sleepLabel = `${Math.floor(sleep / 12)}:${String(Math.round(((sleep / 12) % 1) * 60)).padStart(2, "0")}`;
+
+  const hrvTrend = snapshots.length > 0 ? snapshots.map((s) => Math.round(Number(s.hrv_ms))) : [72, 70, 68, 65, 63, 67, 62, 60, 58, 55, 58, 54, 52, 50];
+
+  const displayNotes = priorNotes.length > 0 ? priorNotes.slice(0, 2) : [
+    { date: "apr 11", quote: "Left trap is worse this week, honestly" },
+    { date: "mar 24", quote: "left trap is a bit tight" },
+  ];
+
   return (
     <WShell pageName="today">
       <div
@@ -141,7 +177,7 @@ export function WContext() {
         </span>
         <span style={{ flex: 1 }} />
         <span className="mono" style={{ fontSize: 10, color: "var(--fog-2)" }}>
-          Data window: Apr 3 → Apr 17 · 14d
+          Data window: Apr 5 → Apr 18 · 14d
         </span>
       </div>
 
@@ -164,25 +200,25 @@ export function WContext() {
                 border: "1px solid var(--ink-4)",
               }}
             >
-              JK
+              {initials}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 20, color: "var(--fog-0)", fontWeight: 500 }}>Jordan Kim</div>
+              <div style={{ fontSize: 20, color: "var(--fog-0)", fontWeight: 500 }}>{clientName}</div>
               <div className="mono" style={{ fontSize: 11, color: "var(--fog-3)", marginTop: 2 }}>
-                34 · endurance athlete · 7th session
+                {clientAge} · {clientProfile} · 7th session
               </div>
             </div>
           </div>
 
           <div style={{ marginTop: 20, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-            <BioCell label="HRV" value="54" unit="ms" trend="↓ 18%" trendColor="var(--flare)" color="var(--hrv)" pct={54} />
-            <BioCell label="Resting" value="64" unit="bpm" trend="↑ 6" trendColor="var(--flare)" color="var(--hr)" pct={78} />
-            <BioCell label="Sleep" value="5:42" trend="poor" trendColor="var(--flare)" color="var(--sleep)" pct={55} />
+            <BioCell label="HRV" value={String(hrv)} unit="ms" trend={`${hrvDelta}%`} trendColor="var(--flare)" color="var(--hrv)" pct={Math.min(100, hrv)} />
+            <BioCell label="Resting" value={String(rhr)} unit="bpm" trend={`↑${rhrDelta}`} trendColor="var(--flare)" color="var(--hr)" pct={Math.min(100, rhr)} />
+            <BioCell label="Sleep" value={sleepLabel} trend={sleep < 65 ? "poor" : "ok"} trendColor={sleep < 65 ? "var(--flare)" : "var(--signal)"} color="var(--sleep)" pct={sleep} />
           </div>
 
           <div style={{ marginTop: 20 }}>
             <div className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)", marginBottom: 10 }}>
-              14-day HRV · baseline 68ms
+              14-day HRV · baseline {baselineHrv}ms
             </div>
             <div
               style={{
@@ -193,15 +229,15 @@ export function WContext() {
               }}
             >
               <HRVSpark
-                data={[72, 70, 68, 66, 62, 58, 60, 56, 54, 52, 55, 53, 50, 54]}
+                data={hrvTrend}
                 width={300}
                 height={60}
                 color="var(--signal)"
                 threshold={62}
               />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                <span className="mono" style={{ fontSize: 9, color: "var(--fog-3)" }}>Apr 3</span>
-                <span className="mono" style={{ fontSize: 9, color: "var(--flare)" }}>↓ trend, 9 days</span>
+                <span className="mono" style={{ fontSize: 9, color: "var(--fog-3)" }}>Apr 5</span>
+                <span className="mono" style={{ fontSize: 9, color: "var(--flare)" }}>↓ trend, 14 days</span>
                 <span className="mono" style={{ fontSize: 9, color: "var(--fog-3)" }}>today</span>
               </div>
             </div>
@@ -212,10 +248,7 @@ export function WContext() {
               notes flagged from prior visits
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {[
-                { d: "apr 10", q: "hip feels locked up since the half-marathon" },
-                { d: "apr 03", q: "left trap been bothering me for a week" },
-              ].map((n, i) => (
+              {displayNotes.map((n, i) => (
                 <div
                   key={i}
                   style={{
@@ -229,10 +262,10 @@ export function WContext() {
                     className="serif"
                     style={{ fontSize: 13, fontStyle: "italic", color: "var(--fog-0)", lineHeight: 1.3 }}
                   >
-                    &ldquo;{n.q}&rdquo;
+                    &ldquo;{n.quote}&rdquo;
                   </div>
                   <div className="mono upper" style={{ fontSize: 8, color: "var(--fog-3)", marginTop: 6 }}>
-                    session · {n.d}
+                    session · {n.date}
                   </div>
                 </div>
               ))}
@@ -254,10 +287,21 @@ export function WContext() {
           </div>
 
           <div style={{ marginTop: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <ReasonCard signal="HRV 54ms" evidence="down 18% from personal baseline" param="→ parasympathetic emphasis" color="var(--hrv)" />
-            <ReasonCard signal="Resting HR 64" evidence="elevated 6 bpm, 4 days" param="→ 40Hz lymphatic vibration" color="var(--hr)" />
-            <ReasonCard signal="Sleep 5h42m" evidence="2 nights < 6h" param="→ extended duration · 38m" color="var(--sleep)" />
-            <ReasonCard signal="Prior note" evidence={`"hip locked up" · apr 10`} param="→ belt placement L4–L5" color="var(--lymph)" />
+            {[
+              { signal: `HRV ${hrv}ms`, evidence: `down ${Math.abs(hrvDelta)}% from personal baseline`, param: "→ parasympathetic emphasis", color: "var(--hrv)" },
+              { signal: `Resting HR ${rhr}`, evidence: `elevated ${rhrDelta} bpm, 4 days`, param: "→ 40Hz lymphatic vibration", color: "var(--hr)" },
+              { signal: `Sleep ${sleepLabel}`, evidence: "2 nights below threshold", param: "→ extended duration · 38m", color: "var(--sleep)" },
+              { signal: "Prior note", evidence: `"${displayNotes[0]?.quote ?? "left trap tight"}" · ${displayNotes[0]?.date ?? "recent"}`, param: "→ Sun pad left placement", color: "var(--lymph)" },
+            ].map((rc, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.18, duration: 0.3 }}
+              >
+                <ReasonCard {...rc} />
+              </motion.div>
+            ))}
           </div>
 
           <div
@@ -273,15 +317,15 @@ export function WContext() {
           >
             <BioGrid color="rgba(212,244,90,0.04)" size={18} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16, position: "relative" }}>
-              <Param label="duration" value="38" unit="min" />
+              <Param label="duration" value="12" unit="min" />
               <Param label="vibration" value="40" unit="Hz" color="var(--lymph)" />
               <Param label="thermal" value="−4°" unit="cool" color="var(--cool)" />
-              <Param label="belt" value="L4–L5" color="var(--signal)" />
+              <Param label="belt" value="Sun · L" color="var(--signal)" />
             </div>
             <div style={{ height: 1, background: "var(--ink-3)", margin: "18px 0 14px" }} />
             <div style={{ display: "flex", gap: 8 }}>
               <Link
-                href="/practitioner/session/jordan-kim/live"
+                href={`/practitioner/session/${clientId}/live`}
                 style={{
                   flex: 1,
                   height: 44,

@@ -182,10 +182,10 @@ export function WRevenue() {
               <span style={{ textAlign: "right" }}>$</span>
             </div>
             {[
-              { c: "Devon Park", f: "today", a: "drafted", o: "pending", d: "—" },
+              { c: "Sarah Chen", f: "today", a: "drafted", o: "pending", d: "—" },
               { c: "Lee Tran", f: "apr 14", a: "texted +1d", o: "booked +2d", d: "+$150" },
               { c: "Priya Shah", f: "apr 9", a: "texted", o: "booked +5d · 2 sessions", d: "+$300" },
-              { c: "Devon Park", f: "apr 4", a: "called", o: "booked +3d", d: "+$150" },
+              { c: "Sarah Chen", f: "apr 4", a: "called", o: "booked +3d", d: "+$150" },
               { c: "Alina Zhou", f: "mar 28", a: "dismissed", o: "booked +14d organic", d: "—" },
               { c: "Marcus Lee", f: "mar 22", a: "texted", o: "booked +6d · 3 sessions", d: "+$450" },
             ].map((r, i) => (

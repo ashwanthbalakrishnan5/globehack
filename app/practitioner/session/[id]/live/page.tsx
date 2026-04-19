@@ -1,15 +1,34 @@
-"use client";
+import { insforgeServer } from "@/lib/insforge";
+import type { SessionNote } from "@/lib/types";
+import { WLiveSessionLive } from "@/components/web/w-live-session-live";
 
-import { useEffect } from "react";
-import { WLiveSession } from "@/components/web/w-live-session";
-import { useSession } from "@/lib/store";
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id: clientId } = await params;
+  const db = insforgeServer();
 
-export default function Page() {
-  const startLive = useSession((s) => s.startLive);
+  // Find the most recent session for this client
+  const { data: sessions } = await db.database
+    .from("sessions")
+    .select("id")
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false })
+    .limit(1);
 
-  useEffect(() => {
-    startLive();
-  }, [startLive]);
+  const sessionId = (sessions as { id: string }[] | null)?.[0]?.id ?? `session-${clientId}`;
 
-  return <WLiveSession />;
+  const { data: notes } = await db.database
+    .from("session_notes")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: true });
+
+  const initialNotes = (notes ?? []) as SessionNote[];
+
+  return (
+    <WLiveSessionLive
+      sessionId={sessionId}
+      clientId={clientId}
+      initialNotes={initialNotes}
+    />
+  );
 }

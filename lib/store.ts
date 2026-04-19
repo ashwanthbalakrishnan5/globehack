@@ -25,7 +25,8 @@ type State = {
   activeClientId: string | null;
   phase: SessionPhase;
   summaryReady: boolean;
-  startCheckIn: (clientId: string, sessionId: string) => void;
+  checkinSource: "qr" | "simulated" | null;
+  startCheckIn: (clientId: string, sessionId: string, source?: "qr" | "simulated") => void;
   startLive: () => void;
   endLive: () => void;
   fireSummary: () => void;
@@ -39,12 +40,14 @@ export const useSession = create<State>()(
       activeClientId: null,
       phase: "idle",
       summaryReady: false,
-      startCheckIn: (clientId, sessionId) =>
+      checkinSource: null,
+      startCheckIn: (clientId, sessionId, source = "simulated") =>
         set({
           activeClientId: clientId,
           activeSessionId: sessionId,
           phase: "checked-in",
           summaryReady: false,
+          checkinSource: source,
         }),
       startLive: () => set({ phase: "live" }),
       endLive: () => set({ phase: "review" }),
@@ -55,6 +58,7 @@ export const useSession = create<State>()(
           activeClientId: null,
           phase: "idle",
           summaryReady: false,
+          checkinSource: null,
         }),
     }),
     {

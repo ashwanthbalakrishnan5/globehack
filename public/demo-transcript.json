@@ -1,0 +1,100 @@
+{
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 4.7,
+      "speaker": "maya",
+      "text": "Okay Marcus, let's start. How is the left trap feeling today compared to last week?",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 5.2,
+      "end": 11.6,
+      "speaker": "marcus",
+      "text": "Honestly, it's worse. Like, a lot worse. Sleeping on my left side is basically impossible right now.",
+      "note_type": "complaint",
+      "flagged": true
+    },
+    {
+      "start": 12.1,
+      "end": 16.7,
+      "speaker": "maya",
+      "text": "I saw that in your HRV data. It's been trending down for about two weeks straight.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 17.2,
+      "end": 22.6,
+      "speaker": "marcus",
+      "text": "Yeah, and sleep has been rough too. I've been waking up at like three AM and can't get back down.",
+      "note_type": "complaint",
+      "flagged": true
+    },
+    {
+      "start": 23.1,
+      "end": 27.8,
+      "speaker": "maya",
+      "text": "That tracks. We're going to use the Sun pad on the left side today, forty hertz sweep.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 28.3,
+      "end": 33.5,
+      "speaker": "marcus",
+      "text": "Oh, that's the one you used last time that actually helped. The one that warmed up kind of slowly.",
+      "note_type": "preference",
+      "flagged": false
+    },
+    {
+      "start": 34.0,
+      "end": 35.9,
+      "speaker": "maya",
+      "text": "Exactly. Starting the sweep now.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 40.9,
+      "end": 46.2,
+      "speaker": "marcus",
+      "text": "I can already feel it. Way different from last time on the right side. The left responds faster.",
+      "note_type": "preference",
+      "flagged": false
+    },
+    {
+      "start": 46.7,
+      "end": 51.3,
+      "speaker": "maya",
+      "text": "Good. Your heart rate is already dropping. Down eight beats from when we started.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 51.8,
+      "end": 58.3,
+      "speaker": "marcus",
+      "text": "Hm. My resting HR has been way up since the half marathon last month. Like, it just hasn't come down.",
+      "note_type": "complaint",
+      "flagged": true
+    },
+    {
+      "start": 58.8,
+      "end": 63.7,
+      "speaker": "maya",
+      "text": "That's a recovery signal we need to watch. The parasympathetic sequence should help.",
+      "note_type": "general",
+      "flagged": false
+    },
+    {
+      "start": 64.2,
+      "end": 69.6,
+      "speaker": "marcus",
+      "text": "I just want to get back to where I was in February. That was my best stretch of training in years.",
+      "note_type": "offhand",
+      "flagged": false
+    }
+  ]
+}
