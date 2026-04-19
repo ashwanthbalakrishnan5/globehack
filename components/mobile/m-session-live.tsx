@@ -1,9 +1,43 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import { MScreen } from "./shell";
+import { subscribeChannel } from "@/lib/realtime";
+import { useBodyState } from "@/lib/body-state";
+import { useSession } from "@/lib/store";
+import type { BodyPartStatus } from "@/components/features/body-viewer";
+
+const BodyViewer = dynamic(() => import("@/components/features/body-viewer"), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        background: "radial-gradient(circle at 50% 60%, rgba(212,244,90,0.12), #0a0d14 70%)",
+      }}
+    />
+  ),
+});
 
 export function MSessionLive() {
+  const clientId = useSession((s) => s.activeClientId) ?? process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
+  const zones = useBodyState((s) => s.zones[clientId] ?? {});
+  const mergeZones = useBodyState((s) => s.mergeZones);
+
+  useEffect(() => {
+    const unsub = subscribeChannel<{ zones: { id: string; status: BodyPartStatus }[] }>(
+      `body:${clientId}`,
+      "zones_updated",
+      ({ zones: incoming }) => {
+        if (incoming?.length) mergeZones(clientId, incoming);
+      }
+    );
+    return unsub;
+  }, [clientId, mergeZones]);
+
   return (
     <MScreen pt={54}>
       <div style={{ padding: "24px 24px 0", display: "flex", flexDirection: "column", height: "100%" }}>
@@ -22,52 +56,26 @@ export function MSessionLive() {
         </div>
         <div
           style={{
-            marginTop: 28,
-            height: 260,
-            borderRadius: 24,
-            background:
-              "radial-gradient(circle at 50% 60%, rgba(212,244,90,0.18), transparent 65%), var(--ink-1)",
+            marginTop: 20,
+            height: 300,
+            borderRadius: 20,
             border: "1px solid var(--ink-3)",
+            background: "var(--ink-1)",
             overflow: "hidden",
             position: "relative",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
           }}
         >
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              style={{
-                position: "absolute",
-                width: 120 + i * 60,
-                height: 120 + i * 60,
-                borderRadius: "50%",
-                border: "1px solid var(--signal)",
-                opacity: 0.2 - i * 0.04,
-                animation: `breathe ${4 + i}s ease-in-out ${i * 0.3}s infinite`,
-              }}
-            />
-          ))}
-          <div
-            style={{
-              width: 100,
-              height: 100,
-              borderRadius: "50%",
-              background: "radial-gradient(circle, var(--signal), var(--signal-dim))",
-              boxShadow: "0 0 60px rgba(212,244,90,0.6)",
-              animation: "breathe 5s ease-in-out infinite",
-            }}
-          />
+          <BodyViewer markedParts={zones} />
           <div
             style={{
               position: "absolute",
-              bottom: 16,
-              left: 20,
-              right: 20,
+              bottom: 12,
+              left: 16,
+              right: 16,
               display: "flex",
               justifyContent: "space-between",
               alignItems: "flex-end",
+              pointerEvents: "none",
             }}
           >
             <div>

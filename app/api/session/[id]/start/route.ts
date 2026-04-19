@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforgeServer } from "@/lib/insforge";
 import { transcribe } from "@/lib/elevenlabs";
-import { extractNote } from "@/lib/gemini";
+import { extractNote, type AffectedZone } from "@/lib/gemini";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: sessionId } = await params;
@@ -37,6 +37,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .maybeSingle();
     const clientName = (clientRes2.data as { name: string } | null)?.name ?? "Marcus Rivera";
 
+    try { await db.realtime.connect(); } catch {}
+
     const batches: typeof segments[] = [];
     for (let i = 0; i < segments.length; i += 4) batches.push(segments.slice(i, i + 4));
 
@@ -58,6 +60,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             start_sec: seg.start,
             end_sec: seg.end,
           });
+
+          if (extracted.affectedZones && extracted.affectedZones.length > 0) {
+            try {
+              await db.realtime.subscribe(`body:${clientId}`);
+              await db.realtime.publish(`body:${clientId}`, "zones_updated", {
+                sessionId,
+                zones: extracted.affectedZones as AffectedZone[],
+              });
+            } catch (e) {
+              console.warn("body zone publish failed", e);
+            }
+          }
         })
       );
     }

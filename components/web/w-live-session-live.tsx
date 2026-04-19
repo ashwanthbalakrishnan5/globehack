@@ -1,13 +1,29 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Meter, Tag, VoiceWave, WavePath } from "@/components/primitives";
 import { WShell } from "./shell";
 import { subscribeChannel } from "@/lib/realtime";
+import { useBodyState } from "@/lib/body-state";
 import type { SessionNote } from "@/lib/types";
+import type { BodyPartStatus } from "@/components/features/body-viewer";
+
+const BodyViewer = dynamic(() => import("@/components/features/body-viewer"), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        background: "radial-gradient(circle at 50% 60%, rgba(212,244,90,0.08), #0a0d14 70%)",
+      }}
+    />
+  ),
+});
 
 interface FallbackSegment {
   start: number;
@@ -39,6 +55,20 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
   const fallbackSegs = useRef<FallbackSegment[]>([]);
   const receivedCount = useRef(0);
   const fallbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const zones = useBodyState((s) => s.zones[clientId] ?? {});
+  const mergeZones = useBodyState((s) => s.mergeZones);
+
+  useEffect(() => {
+    const unsub = subscribeChannel<{ zones: { id: string; status: BodyPartStatus }[] }>(
+      `body:${clientId}`,
+      "zones_updated",
+      ({ zones: incoming }) => {
+        if (incoming?.length) mergeZones(clientId, incoming);
+      }
+    );
+    return unsub;
+  }, [clientId, mergeZones]);
 
   // Pre-load fallback transcript
   useEffect(() => {
@@ -93,9 +123,12 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
     return () => clearInterval(id);
   }, [useFallback, isPlaying, sessionId]);
 
+  const bodyBeforeRef = useRef<Record<string, BodyPartStatus> | null>(null);
+
   const handleStart = useCallback(async () => {
     const audio = audioRef.current;
     if (!audio || isPlaying) return;
+    bodyBeforeRef.current = { ...zones };
     setIsPlaying(true);
     audio.play().catch(console.error);
 
@@ -115,13 +148,24 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
   const handleEndReview = useCallback(async () => {
     if (endingSession) return;
     setEndingSession(true);
+    const bodyAfter: Record<string, BodyPartStatus> = {};
+    for (const [id, status] of Object.entries(zones)) {
+      bodyAfter[id] = status === "pain" ? "recovered" : status;
+    }
     try {
-      await fetch(`/api/session/${sessionId}/summary`, { method: "POST" });
+      await fetch(`/api/session/${sessionId}/summary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bodyBefore: bodyBeforeRef.current ?? zones,
+          bodyAfter,
+        }),
+      });
     } catch (e) {
       console.error(e);
     }
     router.push(`/practitioner/session/${clientId}/notes`);
-  }, [sessionId, clientId, router, endingSession]);
+  }, [sessionId, clientId, router, endingSession, zones]);
 
   const flagged = notes.filter((n) => n.flagged);
 
@@ -322,6 +366,65 @@ export function WLiveSessionLive({ sessionId, clientId, initialNotes }: Props) {
             background: "var(--ink-1)",
           }}
         >
+          <div className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)", marginBottom: 10 }}>
+            live body state
+          </div>
+          <div
+            style={{
+              height: 220,
+              borderRadius: 12,
+              border: "1px solid var(--ink-3)",
+              background: "var(--ink-1)",
+              marginBottom: 12,
+              overflow: "hidden",
+            }}
+          >
+            <BodyViewer markedParts={zones} />
+          </div>
+          <div
+            style={{
+              padding: "8px 10px",
+              borderRadius: 10,
+              background: "rgba(212,244,90,0.04)",
+              border: "1px dashed rgba(212,244,90,0.22)",
+              marginBottom: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <div
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 6,
+                background: "rgba(212,244,90,0.08)",
+                border: "1px solid rgba(212,244,90,0.25)",
+                position: "relative",
+                overflow: "hidden",
+                flexShrink: 0,
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  height: 2,
+                  background: "rgba(212,244,90,0.65)",
+                  boxShadow: "0 0 6px rgba(212,244,90,0.8)",
+                  animation: "scan 1.8s linear infinite",
+                }}
+              />
+            </div>
+            <div>
+              <div className="mono upper" style={{ fontSize: 9, color: "var(--signal)" }}>Vision context</div>
+              <div className="mono" style={{ fontSize: 9, color: "var(--fog-3)" }}>
+                CV movement read · coming soon
+              </div>
+            </div>
+          </div>
+
           <div className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)", marginBottom: 10 }}>
             live vitals
           </div>
