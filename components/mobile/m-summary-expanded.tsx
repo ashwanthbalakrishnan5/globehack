@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MScreen } from "./shell";
 import { LoadingButton, Meter } from "@/components/primitives";
 import type { SummaryCard } from "@/lib/types";
+import { MComicReader } from "./m-comic-reader";
 
 const BodyViewer = dynamic(() => import("@/components/features/body-viewer"), {
   ssr: false,
@@ -38,6 +39,7 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
   const [sharing, startShare] = useTransition();
   const [liked, setLiked] = useState(false);
   const [showAfter, setShowAfter] = useState(false);
+  const [showComic, setShowComic] = useState(false);
 
   useEffect(() => {
     if (!hasBody) return;
@@ -259,6 +261,35 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
           </div>
         </div>
         <div style={{ flex: 1 }} />
+        {/* Comic CTA */}
+        <motion.button
+          type="button"
+          onClick={() => setShowComic(true)}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          style={{
+            width: "100%",
+            height: 52,
+            borderRadius: 14,
+            background: "linear-gradient(135deg, rgba(212,244,90,0.12), rgba(192,123,255,0.08))",
+            border: "1px solid rgba(212,244,90,0.3)",
+            color: "var(--signal)",
+            fontSize: 15,
+            fontWeight: 600,
+            fontFamily: "var(--sans)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            marginBottom: 10,
+          }}
+        >
+          <span style={{ fontSize: 18 }}>📖</span>
+          Read your session story
+        </motion.button>
+
         <div style={{ paddingBottom: 32, display: "flex", gap: 8 }}>
           <LoadingButton
             onClick={handleShare}
@@ -312,5 +343,9 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
         </div>
       </div>
     </MScreen>
+
+    <AnimatePresence>
+      {showComic && <MComicReader onClose={() => setShowComic(false)} />}
+    </AnimatePresence>
   );
 }
