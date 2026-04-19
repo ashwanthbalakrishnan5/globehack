@@ -37,7 +37,7 @@ A practitioner opens a live dashboard on a tablet. A client walks in and scans a
             ▼                                             ▼
   ┌────────────────────┐                        ┌─────────────────────┐
   │  Client  (mobile)  │                        │ Practitioner (desk) │
-  │  /client/*         │ ◀─ signed QR (HMAC) ─▶ │ /practitioner/*     │
+  │  /client/*         │◀─ signed QR (HMAC) ─▶│ /practitioner/*     │
   │                    │        4-min rot       │                     │
   │  QR scanner        │                        │  Rotating QR        │
   │  3D body viewer    │                        │  3D body viewer     │
