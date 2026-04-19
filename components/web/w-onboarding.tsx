@@ -10,6 +10,7 @@ import { questionsForClient } from "@/lib/onboarding-questions";
 import { subscribeChannel } from "@/lib/realtime";
 import type { MarkedParts, BodyPartStatus } from "@/components/features/body-viewer";
 import { WShell } from "./shell";
+import { PoseCapturePanel } from "@/components/features/pose-capture-panel";
 
 type Segment = {
   start: number;
@@ -194,48 +195,15 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
               position: "absolute",
               top: 16,
               left: 16,
-              padding: "10px 12px",
-              borderRadius: 10,
-              background: "rgba(21,26,32,0.72)",
-              backdropFilter: "blur(10px)",
-              border: "1px dashed rgba(212,244,90,0.22)",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              maxWidth: 300,
+              padding: "12px 14px",
+              borderRadius: 12,
+              background: "rgba(10,13,20,0.88)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(212,244,90,0.22)",
+              width: 300,
             }}
           >
-            <div
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 6,
-                background: "rgba(212,244,90,0.08)",
-                border: "1px solid rgba(212,244,90,0.25)",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  height: 2,
-                  background: "rgba(212,244,90,0.6)",
-                  boxShadow: "0 0 6px rgba(212,244,90,0.8)",
-                  animation: "scan 1.8s linear infinite",
-                }}
-              />
-            </div>
-            <div>
-              <div className="mono upper" style={{ fontSize: 9, color: "var(--signal)", letterSpacing: 0.12 }}>
-                Vision context
-              </div>
-              <div className="mono" style={{ fontSize: 10, color: "var(--fog-3)" }}>
-                CV posture read · coming soon
-              </div>
-            </div>
+            <PoseCapturePanel clientId={clientId} phase="before" />
           </div>
         </div>
 
@@ -375,8 +343,8 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
               {Object.keys(zones).length === 0
                 ? "none yet · press play or tap the body to mark"
                 : Object.entries(zones)
-                    .map(([id, status]) => `${id.replace("_", " ")} (${status})`)
-                    .join(", ")}
+                  .map(([id, status]) => `${id.replace("_", " ")} (${status})`)
+                  .join(", ")}
             </div>
           </div>
         </div>
