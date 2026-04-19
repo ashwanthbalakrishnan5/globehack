@@ -2,10 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { decodeToken } from "@/lib/session-token";
 import { insforgeServer } from "@/lib/insforge";
 
-export async function POST(req: NextRequest) {
-  const { token, clientId } = await req.json();
+const DEMO_PRACTITIONER = {
+  id: "maya-reyes",
+  name: "Maya Reyes",
+  title: "DPT",
+  clinic: "Stillwater Recovery",
+  email: "maya@stillwater.care",
+};
 
-  const practitionerId = process.env.DEMO_PRACTITIONER_ID ?? "maya-reyes";
+const DEMO_CLIENT = {
+  id: "alina-zhou",
+  practitioner_id: "maya-reyes",
+  name: "Alina Zhou",
+  initials: "AZ",
+  age: 29,
+  profile:
+    "UX designer. Runs 3-4x/week, pickup football on Saturdays, lifts twice a week. First session.",
+  paired_on: "2026-04-18",
+  session_count: 0,
+  next_booked_on: "2026-04-18",
+};
+
+export async function POST(req: NextRequest) {
+  const { token, clientId: rawClientId } = await req.json();
+
+  const practitionerId = process.env.DEMO_PRACTITIONER_ID ?? DEMO_PRACTITIONER.id;
+  const clientId = rawClientId ?? process.env.DEMO_CLIENT_ID ?? DEMO_CLIENT.id;
 
   if (token) {
     const { valid, error } = decodeToken(token);
@@ -15,10 +37,29 @@ export async function POST(req: NextRequest) {
   }
 
   const db = insforgeServer();
+
+  // Self-heal demo rows so a fresh Insforge project never FK-fails on check-in.
+  try {
+    await db.database
+      .from("practitioners")
+      .upsert(
+        [{ ...DEMO_PRACTITIONER, id: practitionerId }],
+        { onConflict: "id" }
+      );
+    await db.database
+      .from("clients")
+      .upsert(
+        [{ ...DEMO_CLIENT, id: clientId, practitioner_id: practitionerId }],
+        { onConflict: "id" }
+      );
+  } catch (e) {
+    console.warn("Check-in parent upsert failed:", e);
+  }
+
   const { data: session, error } = await db.database
     .from("sessions")
     .insert({
-      client_id: clientId ?? process.env.DEMO_CLIENT_ID ?? "alina-zhou",
+      client_id: clientId,
       practitioner_id: practitionerId,
       started_at: new Date().toISOString(),
       protocol_used: "Cooling Emphasis with 40 Hz Lymphatic Vibration",
@@ -37,7 +78,7 @@ export async function POST(req: NextRequest) {
     await db.realtime.subscribe(`checkin:${practitionerId}`);
     await db.realtime.publish(`checkin:${practitionerId}`, "checked_in", {
       sessionId,
-      clientId: clientId ?? process.env.DEMO_CLIENT_ID ?? "alina-zhou",
+      clientId,
     });
   } catch (e) {
     console.warn("Realtime publish failed:", e);

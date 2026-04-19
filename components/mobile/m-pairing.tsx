@@ -11,7 +11,7 @@ export function MPairing() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <TideMark size={22} />
           <span className="mono upper" style={{ fontSize: 11, color: "var(--fog-2)" }}>
-            Tide · step 3 of 4
+            Tide · step 2 of 2
           </span>
         </div>
         <div style={{ marginTop: 36 }}>
@@ -93,7 +93,7 @@ export function MPairing() {
         <div style={{ flex: 1 }} />
         <div style={{ padding: "0 0 32px" }}>
           <Link
-            href="/client/voice-print"
+            href="/client"
             style={{
               width: "100%",
               height: 54,

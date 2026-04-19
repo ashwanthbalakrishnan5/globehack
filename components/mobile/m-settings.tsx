@@ -11,7 +11,6 @@ const INITIAL_PERMS = [
   { k: "Sleep", v: "stages, duration", on: true },
   { k: "Workouts", v: "type, strain", on: true },
   { k: "Body", v: "weight, composition", on: false },
-  { k: "Voice print", v: "paused when away", on: true },
 ];
 
 export function MSettings() {

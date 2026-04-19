@@ -26,11 +26,10 @@ Cross-device state travels over Insforge realtime channels on the deployed origi
 
 ## 1. Client onboarding (pre-session, one time)
 
-Three screens the client walks through before the first visit, in order:
+Two steps the client walks through before the first visit, in order:
 
-1. **`/client/onboarding`** — Health Connect grant. Permission toggles (HR, sleep, workouts, body). Tapping "Grant" POSTs `/api/onboarding/health-connect`, pushes the 14-day signal window into Insforge, then routes to `/client/pair`.
-2. **`/client/pair`** — Pair with practitioner card (Maya Reyes, DPT). Tapping "Pair with Maya" routes to `/client/voice-print`.
-3. **`/client/voice-print`** — Voice print capture screen. _Visual only._ Tapping through lands the client on `/client` (home).
+1. **`/client/onboarding`** — Health Connect grant as a bottom-sheet popup. Permission toggles (HR, sleep, workouts, body). Tapping "Grant" fires `/api/onboarding/health-connect` in the background (non-blocking, fails silently) and routes immediately to `/client/pair`.
+2. **`/client/pair`** — Pair with practitioner card (Maya Reyes, DPT). Tapping "Pair with Maya" lands the client on `/client` (home).
 
 From home the client taps the "Check in with Maya" CTA to open the scanner at `/client/checkin`.
 
@@ -42,7 +41,7 @@ From home the client taps the "Check in with Maya" CTA to open the scanner at `/
 
 - Greeting + 14-day ring summary (HRV, resting HR, sleep) with an HRV sparkline.
 - Large "Check in with Maya" CTA.
-- Recent sessions list, tonight's coherence protocol tile, voice print tile.
+- Recent sessions list, tonight's coherence protocol tile.
 - Bottom tabs: home, history, coherence, settings.
 
 **Settings** (`/client/settings`) lets the client pause any data stream. Each toggle POSTs `/api/client/privacy` which publishes on `privacy:{clientId}` — the practitioner's Relapse view hides any paused client in real time.
@@ -195,7 +194,7 @@ Each row exposes **Draft message** → `WDraftMessageDrawer` with a pre-written 
 - **Today dashboard badges** (projected revenue $1,120, 68% rebook rate, avg client HRV wave, first two schedule slots) are visual anchors, not computed.
 - **Resonance map zones + asymmetry bars** on `/practitioner/session/[id]/resonance` are a curated default zone set, not derived from this session.
 - **Notes review page** renders three hand-authored extracted cards with Keep/Drop. The "Save & fire summary card" button triggers navigation state; the _real_ summary fires on End & review from the live screen.
-- **Coherence ring and voice print capture** are visual-only animations.
+- **Coherence ring** is a visual-only animation.
 - **Next-session dashboard stats and some copy** on the waiting-state dashboard are stage-dressing.
 
 ### Explicitly out of scope

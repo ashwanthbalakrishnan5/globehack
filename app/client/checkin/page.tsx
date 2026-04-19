@@ -14,6 +14,7 @@ function CheckinHandler() {
   const router = useRouter();
   const initialToken = searchParams.get("token");
   const [token, setToken] = useState<string | null>(initialToken);
+  const [scanCommitted, setScanCommitted] = useState<boolean>(Boolean(initialToken));
   const phase = useSession((s) => s.phase);
   const summaryReady = useSession((s) => s.summaryReady);
   const startCheckIn = useSession((s) => s.startCheckIn);
@@ -37,7 +38,6 @@ function CheckinHandler() {
         const data = await res.json();
         if (!res.ok) {
           setFailed(data.error ?? "Could not check in");
-          setToken(null);
           return;
         }
         if (data.sessionId) {
@@ -55,7 +55,6 @@ function CheckinHandler() {
         }
       } catch (e) {
         setFailed((e as Error).message ?? "Network error");
-        setToken(null);
       } finally {
         setPosting(false);
       }
@@ -80,13 +79,24 @@ function CheckinHandler() {
     else if (phase === "live" || phase === "review") router.push("/client/session");
   }, [summaryReady, phase, router]);
 
-  const showScanner = !token && !posting && !synced && phase === "idle";
+  const showScanner =
+    !scanCommitted && !token && !posting && !synced && phase === "idle";
 
   if (showScanner) {
     return (
       <MCheckinScan
-        onToken={(t) => setToken(t)}
-        simulate={process.env.NODE_ENV === "development" ? () => runCheckIn() : undefined}
+        onToken={(t) => {
+          setScanCommitted(true);
+          setToken(t);
+        }}
+        simulate={
+          process.env.NODE_ENV === "development"
+            ? () => {
+                setScanCommitted(true);
+                runCheckIn();
+              }
+            : undefined
+        }
       />
     );
   }

@@ -310,20 +310,19 @@ export function MHome() {
           </div>
         </div>
 
-        <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
+        <div style={{ marginTop: 20 }}>
           <Link
             href="/client/coherence"
             style={{
-              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
               padding: 14,
               borderRadius: 12,
               background: "var(--ink-2)",
               border: "1px solid var(--ink-3)",
               textDecoration: "none",
               color: "var(--fog-0)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
             }}
           >
             <span className="mono upper" style={{ fontSize: 9, color: "var(--signal)" }}>
@@ -332,29 +331,6 @@ export function MHome() {
             <span style={{ fontSize: 13 }}>Breathe with protocol 7</span>
             <span className="mono" style={{ fontSize: 10, color: "var(--fog-3)" }}>
               coherence ring
-            </span>
-          </Link>
-          <Link
-            href="/client/voice-print"
-            style={{
-              flex: 1,
-              padding: 14,
-              borderRadius: 12,
-              background: "var(--ink-2)",
-              border: "1px solid var(--ink-3)",
-              textDecoration: "none",
-              color: "var(--fog-0)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
-            }}
-          >
-            <span className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)" }}>
-              setup
-            </span>
-            <span style={{ fontSize: 13 }}>Voice print</span>
-            <span className="mono" style={{ fontSize: 10, color: "var(--fog-3)" }}>
-              one-time · 10s
             </span>
           </Link>
         </div>
