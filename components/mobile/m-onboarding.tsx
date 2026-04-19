@@ -1,16 +1,41 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { Loader2 } from "lucide-react";
 import { MScreen } from "./shell";
 import { TideMark } from "@/components/primitives";
 
+const PERMS = [
+  { label: "Heart rate", detail: "resting + variability", on: true },
+  { label: "Sleep stages", detail: "14-day rolling window", on: true },
+  { label: "Workouts", detail: "type, intensity, strain", on: true },
+  { label: "Body metrics", detail: "weight, composition", on: false },
+];
+
 export function MOnboarding() {
-  const perms = [
-    { label: "Heart rate", detail: "resting + variability", on: true },
-    { label: "Sleep stages", detail: "14-day rolling window", on: true },
-    { label: "Workouts", detail: "type, intensity, strain", on: true },
-    { label: "Body metrics", detail: "weight, composition", on: false },
-  ];
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [granted, setGranted] = useState(false);
+  const clientId =
+    process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "marcus-rivera";
+
+  const handleGrant = () => {
+    startTransition(async () => {
+      try {
+        await fetch("/api/onboarding/health-connect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clientId }),
+        });
+        setGranted(true);
+        setTimeout(() => router.push("/client/pair"), 700);
+      } catch (e) {
+        console.error("Health Connect grant failed:", e);
+      }
+    });
+  };
+
   return (
     <MScreen pt={54}>
       <div style={{ padding: "24px 28px 0", display: "flex", flexDirection: "column", height: "100%" }}>
@@ -29,7 +54,7 @@ export function MOnboarding() {
           </div>
         </div>
         <div style={{ marginTop: 36, display: "flex", flexDirection: "column", gap: 8 }}>
-          {perms.map((p, i) => (
+          {PERMS.map((p, i) => (
             <div
               key={i}
               style={{
@@ -90,13 +115,15 @@ export function MOnboarding() {
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ padding: "0 0 32px" }}>
-          <Link
-            href="/client/pair"
+          <button
+            type="button"
+            onClick={handleGrant}
+            disabled={pending || granted}
             style={{
               width: "100%",
               height: 54,
               borderRadius: 14,
-              background: "var(--signal)",
+              background: granted ? "var(--signal-dim)" : "var(--signal)",
               color: "var(--signal-ink)",
               border: "none",
               fontSize: 16,
@@ -104,15 +131,17 @@ export function MOnboarding() {
               fontFamily: "var(--sans)",
               boxShadow: "var(--glow-signal)",
               letterSpacing: -0.2,
-              cursor: "pointer",
-              textDecoration: "none",
+              cursor: pending || granted ? "wait" : "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              gap: 10,
+              opacity: pending ? 0.85 : 1,
             }}
           >
-            Grant Health Connect access
-          </Link>
+            {pending && <Loader2 size={16} className="animate-spin" />}
+            {pending ? "Sending signals..." : granted ? "Signals received ✓" : "Grant Health Connect access"}
+          </button>
           <div className="mono upper" style={{ fontSize: 10, color: "var(--fog-3)", textAlign: "center", marginTop: 14 }}>
             Session-scoped · revocable · never central
           </div>

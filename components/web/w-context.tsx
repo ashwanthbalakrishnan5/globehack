@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { BioGrid, HRVSpark, Tag } from "@/components/primitives";
 import { WShell } from "./shell";
 import type { HealthSnapshot, SessionNote, ReasoningLine } from "@/lib/types";
 import { recommend } from "@/lib/protocol-rules";
+import { subscribeChannel } from "@/lib/realtime";
 
 const REASON_COLOR: Record<ReasoningLine["color"], string> = {
   hrv: "var(--hrv)",
@@ -166,6 +169,22 @@ export function WContext({
   const frequencyHz = reco.protocol.parameters.frequency_hz ?? 30;
   const placement = reco.protocol.parameters.placement;
 
+  const router = useRouter();
+  const [fresh, setFresh] = useState(false);
+
+  useEffect(() => {
+    const unsub = subscribeChannel<{ clientId: string }>(
+      `onboarding:${clientId}`,
+      "health_connected",
+      () => {
+        setFresh(true);
+        router.refresh();
+        setTimeout(() => setFresh(false), 2400);
+      }
+    );
+    return unsub;
+  }, [clientId, router]);
+
   return (
     <WShell pageName="today">
       <div
@@ -227,11 +246,50 @@ export function WContext({
             </div>
           </div>
 
-          <div style={{ marginTop: 20, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          <motion.div
+            key={fresh ? "fresh-bio" : "static-bio"}
+            initial={fresh ? { opacity: 0.2, filter: "blur(4px)" } : false}
+            animate={{ opacity: 1, filter: "blur(0px)" }}
+            transition={{ duration: 0.6 }}
+            style={{ marginTop: 20, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}
+          >
             <BioCell label="HRV" value={String(hrv)} unit="ms" trend={`${hrvDelta}%`} trendColor="var(--flare)" color="var(--hrv)" pct={Math.min(100, hrv)} />
             <BioCell label="Resting" value={String(rhr)} unit="bpm" trend={`↑${rhrDelta}`} trendColor="var(--flare)" color="var(--hr)" pct={Math.min(100, rhr)} />
             <BioCell label="Sleep" value={sleepLabel} trend={sleep < 65 ? "poor" : "ok"} trendColor={sleep < 65 ? "var(--flare)" : "var(--signal)"} color="var(--sleep)" pct={sleep} />
-          </div>
+          </motion.div>
+          <AnimatePresence>
+            {fresh && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                style={{
+                  marginTop: 10,
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  background: "rgba(212,244,90,0.1)",
+                  border: "1px solid rgba(212,244,90,0.3)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "var(--signal)",
+                    boxShadow: "0 0 8px var(--signal)",
+                    animation: "breathe 1s infinite",
+                  }}
+                />
+                <span className="mono upper" style={{ fontSize: 9, color: "var(--signal)" }}>
+                  Signals received · Health Connect
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div style={{ marginTop: 20 }}>
             <div className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)", marginBottom: 10 }}>
