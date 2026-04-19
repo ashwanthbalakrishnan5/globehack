@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MScreen } from "./shell";
+import { MComicReader } from "./m-comic-reader";
 import { LoadingButton, Meter } from "@/components/primitives";
 import type { SummaryCard } from "@/lib/types";
 
