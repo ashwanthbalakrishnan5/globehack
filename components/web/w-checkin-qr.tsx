@@ -48,24 +48,21 @@ export function WCheckinQR({ practitionerId }: { practitionerId?: string }) {
 
   const handleSimulate = () => {
     startTransition(async () => {
+      const demoId = process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "alina-zhou";
+      setSynced(true);
+      fetch("/api/onboarding/health-connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: demoId }),
+      }).catch(() => { /* non-fatal for demo */ });
       const res = await fetch("/api/checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId: process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "alina-zhou" }),
+        body: JSON.stringify({ clientId: demoId }),
       });
       const { sessionId } = await res.json();
-      const demoId = process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "alina-zhou";
       startCheckIn(demoId, sessionId, "simulated");
-      setSynced(true);
-      await new Promise((r) => setTimeout(r, 1200));
       router.push(`/practitioner/session/${demoId}`);
-      setTimeout(() => {
-        fetch("/api/onboarding/health-connect", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clientId: demoId }),
-        }).catch(() => { /* non-fatal for demo */ });
-      }, 1400);
     });
   };
 
