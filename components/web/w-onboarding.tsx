@@ -35,6 +35,17 @@ const DRAFT_MS = 900;
 const QUESTION_REVEAL_MS = 650;
 const CONVERSATION_DELAY_MS = 1400;
 
+// Seeded from the Health Connect payload: football contact + 7 runs in 14 days
+// stress the left knee, running volume + desk hours stress lower back, and
+// sleep trending down with long desk hours shows up as neck tension.
+const HEALTH_CONNECT_PREFILL: Record<string, MarkedParts> = {
+  "alina-zhou": {
+    left_knee: "pain",
+    lower_back: "pain",
+    neck: "pain",
+  },
+};
+
 export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
   const zones = useBodyState((s) => s.zones[clientId] ?? EMPTY_ZONES);
   const setAll = useBodyState((s) => s.setAll);
@@ -49,6 +60,7 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const zonesAppliedRef = useRef<Set<number>>(new Set());
   const eventsSentRef = useRef<Set<number>>(new Set());
+  const transcriptRef = useRef<HTMLDivElement>(null);
 
   const questions = useMemo(
     () => questionsForClient(clientId, clientProfile).slice(0, 6),
@@ -63,7 +75,7 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
   }, []);
 
   useEffect(() => {
-    setAll(clientId, {});
+    setAll(clientId, HEALTH_CONNECT_PREFILL[clientId] ?? {});
   }, [clientId, setAll]);
 
   useEffect(() => {
@@ -171,6 +183,17 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
     []
   );
 
+  // Auto-scroll transcript to the newest segment, but only if the user hasn't
+  // scrolled up to read earlier ones. 80px tolerance feels natural.
+  useEffect(() => {
+    const el = transcriptRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (nearBottom) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }
+  }, [visibleCount]);
+
   const handleZoneChange = useCallback(
     (parts: MarkedParts) => setAll(clientId, parts),
     [clientId, setAll]
@@ -269,23 +292,124 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
           overflow: "hidden",
         }}
       >
-        <div style={{ position: "relative", minHeight: 0 }}>
-          <PainReporter markedParts={zones} onChange={handleZoneChange} />
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
+            <PainReporter markedParts={zones} onChange={handleZoneChange} />
+
+            <div
+              style={{
+                position: "absolute",
+                top: 16,
+                left: 16,
+                padding: "12px 14px",
+                borderRadius: 12,
+                background: "rgba(10,13,20,0.88)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(212,244,90,0.22)",
+                width: 300,
+              }}
+            >
+              <PoseCapturePanel clientId={clientId} phase="before" />
+            </div>
+          </div>
 
           <div
             style={{
-              position: "absolute",
-              top: 16,
-              left: 16,
-              padding: "12px 14px",
-              borderRadius: 12,
-              background: "rgba(10,13,20,0.88)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid rgba(212,244,90,0.22)",
-              width: 300,
+              flex: "0 0 240px",
+              borderTop: "1px solid var(--ink-3)",
+              background: "var(--ink-1)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
             }}
           >
-            <PoseCapturePanel clientId={clientId} phase="before" />
+            <div
+              style={{
+                padding: "10px 20px",
+                borderBottom: "1px solid var(--ink-3)",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flexShrink: 0,
+              }}
+            >
+              <span className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)" }}>
+                live transcript · diarized
+              </span>
+              {playing && currentSpeaker && (
+                <span className="mono" style={{ fontSize: 10, color: "var(--fog-3)" }}>
+                  · {currentSpeaker === "maya" ? "Maya" : clientName.split(" ")[0]} speaking…
+                </span>
+              )}
+            </div>
+
+            <div
+              ref={transcriptRef}
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: "12px 20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <AnimatePresence initial={false}>
+                {visibleSegments.map((seg, i) => (
+                  <motion.div
+                    key={`${seg.start}-${i}`}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 240, damping: 22 }}
+                    style={{
+                      padding: "8px 10px",
+                      borderRadius: 8,
+                      background: seg.flagged ? "rgba(212,244,90,0.06)" : "var(--ink-2)",
+                      border: seg.flagged ? "1px solid rgba(212,244,90,0.2)" : "1px solid var(--ink-3)",
+                    }}
+                  >
+                    <div
+                      className="mono upper"
+                      style={{
+                        fontSize: 9,
+                        color: seg.speaker === "maya" ? "var(--fog-3)" : "var(--signal)",
+                      }}
+                    >
+                      {seg.speaker === "maya" ? "MAYA" : clientName.split(" ")[0].toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--fog-0)", marginTop: 2, lineHeight: 1.4 }}>
+                      {seg.text}
+                    </div>
+                    {seg.zones?.length > 0 && (
+                      <div className="mono" style={{ fontSize: 10, color: "var(--signal)", marginTop: 6 }}>
+                        lighting · {seg.zones.map((z) => z.id.replace("_", " ")).join(", ")}
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              {!playing && visibleSegments.length === 0 && stage === "playing" && (
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    background: "var(--ink-2)",
+                    border: "1px dashed var(--ink-3)",
+                    fontSize: 11,
+                    color: "var(--fog-3)",
+                  }}
+                >
+                  Maya beginning the conversation…
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -354,73 +478,6 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
             </AnimatePresence>
             {stage === "ready" && revealedQuestions < questions.length && (
               <DraftingPlaceholder />
-            )}
-          </div>
-
-          <div
-            style={{
-              borderTop: "1px solid var(--ink-3)",
-              paddingTop: 14,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            <div className="mono upper" style={{ fontSize: 9, color: "var(--fog-3)" }}>
-              live transcript · diarized
-            </div>
-            <AnimatePresence initial={false}>
-              {visibleSegments.map((seg, i) => (
-                <motion.div
-                  key={`${seg.start}-${i}`}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ type: "spring", stiffness: 240, damping: 22 }}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 8,
-                    background: seg.flagged ? "rgba(212,244,90,0.06)" : "var(--ink-2)",
-                    border: seg.flagged ? "1px solid rgba(212,244,90,0.2)" : "1px solid var(--ink-3)",
-                  }}
-                >
-                  <div
-                    className="mono upper"
-                    style={{
-                      fontSize: 9,
-                      color: seg.speaker === "maya" ? "var(--fog-3)" : "var(--signal)",
-                    }}
-                  >
-                    {seg.speaker === "maya" ? "MAYA" : clientName.split(" ")[0].toUpperCase()}
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--fog-0)", marginTop: 2, lineHeight: 1.4 }}>
-                    {seg.text}
-                  </div>
-                  {seg.zones?.length > 0 && (
-                    <div className="mono" style={{ fontSize: 10, color: "var(--signal)", marginTop: 6 }}>
-                      lighting · {seg.zones.map((z) => z.id.replace("_", " ")).join(", ")}
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            {playing && currentSpeaker && (
-              <div className="mono" style={{ fontSize: 10, color: "var(--fog-3)" }}>
-                {currentSpeaker === "maya" ? "Maya" : clientName.split(" ")[0]} speaking…
-              </div>
-            )}
-            {!playing && visibleSegments.length === 0 && stage === "playing" && (
-              <div
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 8,
-                  background: "var(--ink-2)",
-                  border: "1px dashed var(--ink-3)",
-                  fontSize: 11,
-                  color: "var(--fog-3)",
-                }}
-              >
-                Maya beginning the conversation…
-              </div>
             )}
           </div>
 

@@ -120,12 +120,8 @@ const BodyViewer = forwardRef<BodyViewerHandle, BodyViewerProps>(
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(background);
 
-      const grid = new THREE.GridHelper(10, 20, 0x1a2035, 0x1a2035);
-      grid.position.y = -3;
-      scene.add(grid);
-
-      const camera = new THREE.PerspectiveCamera(42, el.clientWidth / el.clientHeight, 0.01, 100);
-      camera.position.set(0, 0, 9);
+      const camera = new THREE.PerspectiveCamera(36, el.clientWidth / el.clientHeight, 0.01, 100);
+      camera.position.set(0, 0, 6.4);
 
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
