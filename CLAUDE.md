@@ -65,6 +65,8 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 
 **SOLID, applied pragmatically.** In a hackathon codebase, the useful half of SOLID is single-responsibility (each function does one thing) and dependency-inversion (pass Insforge and ElevenLabs clients in, don't import them globally). Ignore the rest.
 
+After each meaningful part completes, commit the code with a clear message. Don't wait until the end to commit a giant diff. Small, focused commits are easier to review and debug.
+
 ## 4. Surgical Changes
 
 Touch only what you must. Clean up only your own mess.
