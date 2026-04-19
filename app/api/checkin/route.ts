@@ -64,18 +64,20 @@ export async function POST(req: NextRequest) {
 
   const sessionId = (session as { id: string } | null)?.id;
 
-  // Realtime publish only needed for real QR flow; simulate navigates directly.
+  // Publish realtime in background so the client button responds immediately.
   if (!isSimulated) {
-    try {
-      await db.realtime.connect();
-      await db.realtime.subscribe(`checkin:${practitionerId}`);
-      await db.realtime.publish(`checkin:${practitionerId}`, "checked_in", {
-        sessionId,
-        clientId,
-      });
-    } catch (e) {
-      console.warn("Realtime publish failed:", e);
-    }
+    (async () => {
+      try {
+        await db.realtime.connect();
+        await db.realtime.subscribe(`checkin:${practitionerId}`);
+        await db.realtime.publish(`checkin:${practitionerId}`, "checked_in", {
+          sessionId,
+          clientId,
+        });
+      } catch (e) {
+        console.warn("Realtime publish failed:", e);
+      }
+    })();
   }
 
   return NextResponse.json({ sessionId });

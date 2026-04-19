@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MScreen } from "./shell";
 import { LoadingButton, Meter } from "@/components/primitives";
@@ -28,7 +28,7 @@ interface Props {
 }
 
 export function MSummaryExpanded({ card, summaryId }: Props) {
-  const quote = card?.quote ?? "Left trap is worse this week.";
+  const quote = card?.quote ?? "Something finally released. I haven't felt this clear in months.";
   const durationMin = card?.duration_min ?? 42;
   const hrvAtSession = card?.hrv_at_session ?? 50;
   const protocol = card?.protocol_used ?? "40 Hz Lymphatic";
@@ -36,7 +36,6 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
   const bodyAfter = card?.body_after ?? {};
   const hasBody = Object.keys(bodyBefore).length > 0 || Object.keys(bodyAfter).length > 0;
 
-  const shareCardRef = useRef<HTMLDivElement | null>(null);
   const [sharing, startShare] = useTransition();
   const [liked, setLiked] = useState(false);
   const [showAfter, setShowAfter] = useState(false);
@@ -50,43 +49,40 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
 
   const handleShare = () => {
     startShare(async () => {
-      if (!shareCardRef.current) return;
       try {
-        const { default: html2canvas } = await import("html2canvas");
-        const canvas = await html2canvas(shareCardRef.current, {
-          backgroundColor: "#0a0d14",
-          scale: 3,
-          useCORS: true,
-          logging: false,
-        });
-        const blob = await new Promise<Blob | null>((resolve) =>
-          canvas.toBlob(resolve, "image/png", 1)
-        );
-        if (!blob) return;
-        const file = new File([blob], "tide-session.png", { type: "image/png" });
         const shareUrl = summaryId
           ? `${window.location.origin}/share/${summaryId}`
           : window.location.origin;
-        if (
-          typeof navigator !== "undefined" &&
-          "share" in navigator &&
-          typeof navigator.canShare === "function" &&
-          navigator.canShare({ files: [file] })
-        ) {
-          await navigator.share({
-            files: [file],
-            title: "My Hydrawav3 session with Maya Reyes",
-            text: `"${quote}" — ${durationMin} min recovery session at Stillwater Recovery`,
-            url: shareUrl,
-          });
-          return;
+
+        if (summaryId) {
+          const res = await fetch(`/api/card/${summaryId}`);
+          if (!res.ok) throw new Error("card render failed");
+          const blob = await res.blob();
+          const file = new File([blob], "tide-session.png", { type: "image/png" });
+
+          if (
+            typeof navigator !== "undefined" &&
+            "share" in navigator &&
+            typeof navigator.canShare === "function" &&
+            navigator.canShare({ files: [file] })
+          ) {
+            await navigator.share({
+              files: [file],
+              title: "My Hydrawav3 session with Maya Reyes",
+              text: `"${quote}" — ${durationMin} min recovery session at Stillwater Recovery`,
+              url: shareUrl,
+            });
+            return;
+          }
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "tide-session.png";
+          a.click();
+          URL.revokeObjectURL(url);
         }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "tide-session.png";
-        a.click();
-        URL.revokeObjectURL(url);
+
         window.open(
           `https://twitter.com/intent/tweet?text=${encodeURIComponent(`"${quote}" — my recovery session via @Hydrawav3`)}&url=${encodeURIComponent(shareUrl)}`,
           "_blank",
@@ -97,8 +93,6 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
       }
     });
   };
-
-  const shortQuote = quote.length > 80 ? quote.slice(0, 80) + "…" : quote;
 
   return (
     <>
@@ -345,281 +339,6 @@ export function MSummaryExpanded({ card, summaryId }: Props) {
           </div>
         </div>
       </MScreen>
-
-      {/* Off-screen share card — captured by html2canvas, not visible in UI */}
-      <div
-        ref={shareCardRef}
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          left: -9999,
-          top: 0,
-          width: 390,
-          height: 693,
-          background: "#0a0d14",
-          display: "flex",
-          flexDirection: "column",
-          padding: "36px 30px 30px",
-          boxSizing: "border-box",
-          overflow: "hidden",
-        }}
-      >
-        {/* Ambient glows */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          background: "radial-gradient(ellipse at 85% 8%, rgba(212,244,90,0.18) 0%, transparent 50%), radial-gradient(ellipse at 10% 90%, rgba(80,160,210,0.12) 0%, transparent 50%)",
-          pointerEvents: "none",
-        }} />
-
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{
-              width: 30,
-              height: 30,
-              borderRadius: 9,
-              background: "#d4f45a",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
-              <svg width="18" height="12" viewBox="0 0 32 20" fill="none">
-                <path d="M2 16 Q 10 6, 16 16 T 30 16" stroke="#0a0d14" strokeWidth="3.2" strokeLinecap="round" fill="none" />
-              </svg>
-            </div>
-            <span style={{
-              fontFamily: "Courier New, Courier, monospace",
-              fontSize: 14,
-              letterSpacing: 2,
-              color: "#d4f45a",
-              textTransform: "uppercase",
-            }}>
-              Tide
-            </span>
-          </div>
-          <span style={{
-            fontFamily: "Courier New, Courier, monospace",
-            fontSize: 9,
-            letterSpacing: 2.5,
-            color: "rgba(238,241,246,0.3)",
-            textTransform: "uppercase",
-          }}>
-            Session summary
-          </span>
-        </div>
-
-        {/* Practitioner credit */}
-        <div style={{ marginTop: 28, position: "relative" }}>
-          <div style={{
-            fontFamily: "Courier New, Courier, monospace",
-            fontSize: 9,
-            letterSpacing: 2,
-            color: "rgba(212,244,90,0.65)",
-            textTransform: "uppercase",
-            marginBottom: 6,
-          }}>
-            Session with
-          </div>
-          <div style={{
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            fontSize: 20,
-            fontWeight: 700,
-            color: "#eef1f6",
-            lineHeight: 1.15,
-            letterSpacing: -0.3,
-          }}>
-            Maya Reyes, DPT
-          </div>
-          <div style={{
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            fontSize: 12,
-            color: "rgba(238,241,246,0.45)",
-            marginTop: 3,
-          }}>
-            Stillwater Recovery
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div style={{
-          marginTop: 22,
-          height: 1,
-          background: "linear-gradient(90deg, rgba(212,244,90,0.5), rgba(212,244,90,0.05) 70%, transparent)",
-          position: "relative",
-        }} />
-
-        {/* Quote */}
-        <div style={{ marginTop: 22, position: "relative", flex: 1 }}>
-          <div style={{
-            fontFamily: "Courier New, Courier, monospace",
-            fontSize: 9,
-            letterSpacing: 2,
-            color: "rgba(238,241,246,0.3)",
-            textTransform: "uppercase",
-            marginBottom: 14,
-          }}>
-            You said
-          </div>
-          <div style={{
-            fontFamily: "Georgia, 'Times New Roman', serif",
-            fontSize: 26,
-            lineHeight: 1.3,
-            color: "#eef1f6",
-            fontStyle: "italic",
-            letterSpacing: -0.2,
-          }}>
-            &ldquo;{shortQuote}&rdquo;
-          </div>
-        </div>
-
-        {/* Metrics card */}
-        <div style={{
-          padding: "18px 18px 16px",
-          borderRadius: 16,
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.09)",
-          position: "relative",
-        }}>
-          <div style={{
-            fontFamily: "Courier New, Courier, monospace",
-            fontSize: 9,
-            letterSpacing: 2,
-            color: "rgba(238,241,246,0.3)",
-            textTransform: "uppercase",
-            marginBottom: 14,
-          }}>
-            What changed in {durationMin} min
-          </div>
-          <div style={{ display: "flex", gap: 0 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{
-                fontFamily: "Courier New, Courier, monospace",
-                fontSize: 30,
-                fontWeight: 400,
-                color: "#eef1f6",
-                lineHeight: 1,
-              }}>
-                <span style={{ color: "#d4f45a" }}>&#8595;</span>11
-                <span style={{
-                  fontFamily: "-apple-system, sans-serif",
-                  fontSize: 13,
-                  color: "rgba(238,241,246,0.45)",
-                  fontWeight: 400,
-                }}> bpm</span>
-              </div>
-              <div style={{
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                fontSize: 11,
-                color: "rgba(238,241,246,0.45)",
-                marginTop: 4,
-              }}>
-                Heart rate drop
-              </div>
-            </div>
-            <div style={{
-              width: 1,
-              background: "rgba(255,255,255,0.07)",
-              margin: "0 16px",
-            }} />
-            <div style={{ flex: 1 }}>
-              <div style={{
-                fontFamily: "Courier New, Courier, monospace",
-                fontSize: 30,
-                fontWeight: 400,
-                color: "#eef1f6",
-                lineHeight: 1,
-              }}>
-                <span style={{ color: "#d4f45a" }}>+</span>18
-                <span style={{
-                  fontFamily: "-apple-system, sans-serif",
-                  fontSize: 13,
-                  color: "rgba(238,241,246,0.45)",
-                  fontWeight: 400,
-                }}> ms</span>
-              </div>
-              <div style={{
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-                fontSize: 11,
-                color: "rgba(238,241,246,0.45)",
-                marginTop: 4,
-              }}>
-                HRV improvement
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Protocol + duration pills */}
-        <div style={{ marginTop: 12, display: "flex", gap: 8, position: "relative" }}>
-          <div style={{
-            padding: "6px 13px",
-            borderRadius: 999,
-            background: "rgba(212,244,90,0.08)",
-            border: "1px solid rgba(212,244,90,0.22)",
-            fontFamily: "Courier New, Courier, monospace",
-            fontSize: 10,
-            letterSpacing: 0.5,
-            color: "#d4f45a",
-          }}>
-            {protocol}
-          </div>
-          <div style={{
-            padding: "6px 13px",
-            borderRadius: 999,
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            fontFamily: "Courier New, Courier, monospace",
-            fontSize: 10,
-            letterSpacing: 0.5,
-            color: "rgba(238,241,246,0.5)",
-          }}>
-            {durationMin} min
-          </div>
-        </div>
-
-        {/* Footer CTA */}
-        <div style={{
-          marginTop: 18,
-          paddingTop: 16,
-          borderTop: "1px solid rgba(255,255,255,0.06)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          position: "relative",
-        }}>
-          <div>
-            <div style={{
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#eef1f6",
-            }}>
-              Start your recovery
-            </div>
-            <div style={{
-              fontFamily: "Courier New, Courier, monospace",
-              fontSize: 10,
-              color: "rgba(238,241,246,0.35)",
-              marginTop: 2,
-            }}>
-              hydrawav3.com
-            </div>
-          </div>
-          <div style={{
-            padding: "9px 18px",
-            borderRadius: 10,
-            background: "#d4f45a",
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#0a0d14",
-            letterSpacing: 0.2,
-          }}>
-            Book now
-          </div>
-        </div>
-      </div>
 
       <AnimatePresence>
         {showComic && <MComicReader onClose={() => setShowComic(false)} />}

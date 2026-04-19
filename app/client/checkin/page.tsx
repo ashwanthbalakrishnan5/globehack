@@ -15,14 +15,19 @@ function CheckinHandler() {
   const initialToken = searchParams.get("token");
   const [token, setToken] = useState<string | null>(initialToken);
   const [scanCommitted, setScanCommitted] = useState<boolean>(Boolean(initialToken));
-  const phase = useSession((s) => s.phase);
-  const summaryReady = useSession((s) => s.summaryReady);
   const startCheckIn = useSession((s) => s.startCheckIn);
+  const resetDemo = useSession((s) => s.resetDemo);
   const [posting, setPosting] = useState(false);
   const [synced, setSynced] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
   const practitionerName =
     process.env.NEXT_PUBLIC_DEMO_PRACTITIONER_NAME ?? "Maya";
+
+  // Always reset session phase on mount so the QR scanner shows regardless
+  // of what previous demo run left in the Zustand store.
+  useEffect(() => {
+    resetDemo();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const runCheckIn = useCallback(
     async (checkinToken?: string) => {
@@ -43,8 +48,6 @@ function CheckinHandler() {
         if (data.sessionId) {
           startCheckIn(clientId, data.sessionId, checkinToken ? "qr" : "simulated");
           setSynced(true);
-          // Re-publish Health Connect after scan so the practitioner animates
-          // data arriving once they're on the session page.
           setTimeout(() => {
             fetch("/api/onboarding/health-connect", {
               method: "POST",
@@ -63,10 +66,10 @@ function CheckinHandler() {
   );
 
   useEffect(() => {
-    if (token && phase === "idle" && !posting && !synced && !failed) {
+    if (token && !posting && !synced && !failed) {
       runCheckIn(token);
     }
-  }, [token, phase, posting, synced, failed, runCheckIn]);
+  }, [token, posting, synced, failed, runCheckIn]);
 
   useEffect(() => {
     if (!synced) return;
@@ -74,13 +77,8 @@ function CheckinHandler() {
     return () => clearTimeout(t);
   }, [synced, router]);
 
-  useEffect(() => {
-    if (summaryReady) router.push("/client/summary");
-    else if (phase === "live" || phase === "review") router.push("/client/session");
-  }, [summaryReady, phase, router]);
-
-  const showScanner =
-    !scanCommitted && !token && !posting && !synced && phase === "idle";
+  // No longer redirect based on stale phase from a previous run.
+  const showScanner = !scanCommitted && !token && !posting && !synced;
 
   if (showScanner) {
     return (

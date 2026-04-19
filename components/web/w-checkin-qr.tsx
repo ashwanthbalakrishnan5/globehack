@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useTransition } from "react";
+import { useEffect, useRef, useState, useCallback, useTransition } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useRouter } from "next/navigation";
 import { subscribeChannel } from "@/lib/realtime";
@@ -31,24 +31,48 @@ export function WCheckinQR({ practitionerId }: { practitionerId?: string }) {
     return () => clearInterval(interval);
   }, [refreshToken]);
 
+  const syncedRef = useRef(false);
+
+  const handleCheckedIn = useCallback((clientId: string, sessionId: string) => {
+    if (syncedRef.current) return;
+    syncedRef.current = true;
+    startCheckIn(clientId, sessionId, "qr");
+    setSynced(true);
+    setTimeout(() => {
+      router.push(`/practitioner/session/${clientId}`);
+    }, 1500);
+  }, [startCheckIn, router]);
+
+  // Realtime subscription
   useEffect(() => {
     const unsub = subscribeChannel<{ sessionId: string; clientId: string }>(
       `checkin:${pid}`,
       "checked_in",
-      ({ sessionId, clientId }) => {
-        startCheckIn(clientId, sessionId, "qr");
-        setSynced(true);
-        setTimeout(() => {
-          router.push(`/practitioner/session/${clientId}`);
-        }, 1500);
-      }
+      ({ sessionId, clientId }) => handleCheckedIn(clientId, sessionId)
     );
     return unsub;
-  }, [pid, router, startCheckIn]);
+  }, [pid, handleCheckedIn]);
+
+  // Polling fallback: queries for a new session every 2s in case realtime misses it
+  useEffect(() => {
+    const mountedAt = new Date();
+    const poll = setInterval(async () => {
+      if (syncedRef.current) { clearInterval(poll); return; }
+      try {
+        const res = await fetch("/api/checkin/latest");
+        const { session } = await res.json();
+        if (session && new Date(session.started_at) >= mountedAt) {
+          handleCheckedIn(session.client_id, session.id);
+        }
+      } catch { /* non-fatal */ }
+    }, 2000);
+    return () => clearInterval(poll);
+  }, [handleCheckedIn]);
 
   const handleSimulate = () => {
     startTransition(async () => {
       const demoId = process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "alina-zhou";
+      syncedRef.current = true;
       setSynced(true);
       fetch("/api/onboarding/health-connect", {
         method: "POST",
