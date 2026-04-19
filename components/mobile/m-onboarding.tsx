@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { MScreen } from "./shell";
 import { TideMark } from "@/components/primitives";
 
-const PERMS = [
+const INITIAL_PERMS = [
   { label: "Heart rate", detail: "resting + variability", on: true },
   { label: "Sleep stages", detail: "14-day rolling window", on: true },
   { label: "Workouts", detail: "type, intensity, strain", on: true },
@@ -16,8 +16,16 @@ const PERMS = [
 export function MOnboarding() {
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
+  const [perms, setPerms] = useState(INITIAL_PERMS);
   const clientId =
     process.env.NEXT_PUBLIC_DEMO_CLIENT_ID ?? "alina-zhou";
+
+  const togglePerm = (idx: number) => {
+    if (leaving) return;
+    setPerms((prev) =>
+      prev.map((p, i) => (i === idx ? { ...p, on: !p.on } : p))
+    );
+  };
 
   const handleGrant = () => {
     if (leaving) return;
@@ -119,9 +127,14 @@ export function MOnboarding() {
           </div>
 
           <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 8 }}>
-            {PERMS.map((p, i) => (
-              <div
+            {perms.map((p, i) => (
+              <button
                 key={i}
+                type="button"
+                role="switch"
+                aria-checked={p.on}
+                aria-label={`${p.label} · ${p.on ? "on" : "off"}`}
+                onClick={() => togglePerm(i)}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -130,6 +143,11 @@ export function MOnboarding() {
                   background: "var(--ink-2)",
                   borderRadius: 12,
                   border: "1px solid var(--ink-3)",
+                  width: "100%",
+                  textAlign: "left",
+                  fontFamily: "var(--sans)",
+                  cursor: "pointer",
+                  color: "inherit",
                 }}
               >
                 <div
@@ -144,6 +162,7 @@ export function MOnboarding() {
                     color: p.on ? "var(--signal-ink)" : "var(--fog-3)",
                     fontSize: 12,
                     fontWeight: 700,
+                    transition: "background 160ms ease",
                   }}
                 >
                   {p.on ? "✓" : "○"}
@@ -161,6 +180,7 @@ export function MOnboarding() {
                     borderRadius: 999,
                     background: p.on ? "var(--signal)" : "var(--ink-4)",
                     position: "relative",
+                    transition: "background 160ms ease",
                   }}
                 >
                   <div
@@ -172,10 +192,11 @@ export function MOnboarding() {
                       height: 14,
                       borderRadius: 999,
                       background: "#fff",
+                      transition: "left 160ms ease",
                     }}
                   />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 
