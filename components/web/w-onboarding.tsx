@@ -206,10 +206,10 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
     stage === "analyzing"
       ? "Analyzing 14 days of health data"
       : stage === "drafting"
-      ? "Drafting personalized questions"
-      : stage === "ready"
-      ? "Questions ready, starting conversation"
-      : `Onboarding · ${clientName} · Bay 3`;
+        ? "Drafting personalized questions"
+        : stage === "ready"
+          ? "Questions ready, starting conversation"
+          : `Onboarding · ${clientName} · Bay 3`;
 
   return (
     <WShell pageName="today">
@@ -264,7 +264,7 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
         </span>
         <span style={{ flex: 1 }} />
         <Link
-          href={`/practitioner/session/${clientId}/live`}
+          href={`/practitioner/session/${clientId}/device`}
           style={{
             fontSize: 12,
             color: "var(--signal-ink)",
@@ -275,9 +275,6 @@ export function WOnboarding({ clientId, clientName, clientProfile }: Props) {
             background: "var(--signal)",
             border: "none",
             textDecoration: "none",
-            opacity: stage === "playing" && visibleCount >= segments.length && segments.length > 0 ? 1 : 0.55,
-            pointerEvents: stage === "playing" && visibleCount >= segments.length && segments.length > 0 ? "auto" : "none",
-            transition: "opacity 0.3s",
           }}
         >
           Start session →
@@ -517,8 +514,8 @@ function GenerationStatus({ stage }: { stage: Stage }) {
     stage === "analyzing"
       ? "Reading HRV, sleep, and activity history"
       : stage === "drafting"
-      ? "Shaping questions around football, running, gym, and desk hours"
-      : "Ready";
+        ? "Shaping questions around football, running, gym, and desk hours"
+        : "Ready";
   return (
     <div
       style={{

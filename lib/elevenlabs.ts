@@ -20,6 +20,7 @@ export async function transcribe(audioUrl: string): Promise<TranscribeResult> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      model_id: "scribe_v1",
       audio_url: audioUrl,
       diarize: true,
       language_code: "en",
